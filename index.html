@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Mukammal AR Tur (Joystik bilan)</title>
+    <title>To'liq Nazoratli AR Tur</title>
     <meta name="description" content="A-Frame AR - untitled2.glb">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
     <script src="aframe-v1.5.0.min.js"></script> <!-- Lokal A-Frame -->
@@ -12,46 +12,21 @@
         body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; -webkit-user-select: none; -ms-user-select: none; user-select: none; }
         a-scene { height: 100vh; width: 100vw; }
 
-        /* ---- UI Elementlari ---- */
         .ui-container {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            pointer-events: none; /* UI orqali o'tib ketish uchun */
-            z-index: 10;
+            position: fixed; width: 100%; height: 100%; top: 0; left: 0;
+            pointer-events: none; z-index: 10;
         }
-
-        /* Joystik uchun hudud (ekranning pastki yarmi) */
         #joystick-area {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 50vh; /* Ekranning pastki yarmi */
-            pointer-events: auto; /* Bu hududda sensor ishlaydi */
-            /* background-color: rgba(0, 255, 0, 0.1); */ /* Test uchun */
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 50vh;
+            pointer-events: auto;
         }
-        #joystick-nipple-container { /* Joystikning o'zi uchun konteyner */
-            position: absolute;
-            width: 120px; /* Joystik bazasi o'lchami */
-            height: 120px;
-            opacity: 0.6;
-            display: none; /* Dastlab yashirilgan */
-             /* Joystik paydo bo'lganda `left` va `top` JavaScript orqali o'rnatiladi */
+        #joystick-nipple-container {
+            position: absolute; width: 120px; height: 120px;
+            opacity: 0.6; display: none;
         }
-
-
-        /* Yuqori qismdagi boshqaruvlar (masshtab, balandlik) */
         .top-controls {
-            position: absolute;
-            top: 15px;
-            left: 0;
-            width: 100%;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
+            position: absolute; top: 15px; left: 0; width: 100%;
+            display: flex; justify-content: space-around; align-items: center;
             pointer-events: auto;
         }
         .top-controls div { display: flex; gap: 10px; }
@@ -61,13 +36,8 @@
             -webkit-tap-highlight-color: transparent;
         }
         .top-controls button:active { background-color: rgba(0,0,0,0.9); }
-
-
         #ar-status-overlay {
-            position: absolute;
-            bottom: 55vh; /* Joystik hududidan sal yuqoriroq */
-            left: 50%;
-            transform: translateX(-50%);
+            position: absolute; bottom: 55vh; left: 50%; transform: translateX(-50%);
             visibility: hidden; background-color: rgba(0,0,0,0.75);
             color: white; padding: 8px 12px; border-radius: 5px; font-size: 13px;
             pointer-events: none;
@@ -79,7 +49,7 @@
         webxr="optionalFeatures: dom-overlay, hit-test;"
         ar-mode-ui="enabled: true; overlayElement: #ar-status-overlay;"
         renderer="colorManagement: true; physicallyCorrectLights: true;"
-        background="color: #CFD8DC" <!-- Fon rangi -->
+        background="color: #CFD8DC"
         id="myScene"
         vr-mode-ui="enabled: false">
 
@@ -87,49 +57,32 @@
             <a-asset-item id="buildingAsset" src="untitled2.glb"></a-asset-item>
         </a-assets>
 
-        <!-- Kamera Rig (O'yinchi) -->
-        <a-entity id="playerRig" position="0 0.5 5" <!-- Boshlang'ich pozitsiya -->
-                  wasd-controls="fly: false; acceleration: 45; enabled: true;" <!-- `fly: false` qildim, balandlikni UI bilan boshqaramiz -->
-                  look-controls="pointerLockEnabled: false; <!-- PC uchun pointer lockni keyinroq yoqishimiz mumkin -->
+        <a-entity id="playerRig" position="0 0.5 5"
+                  wasd-controls="fly: false; acceleration: 45; enabled: true;"
+                  look-controls="pointerLockEnabled: false; 
                                  magicWindowTrackingEnabled: false; 
                                  touchEnabled: true;
                                  mouseEnabled: true;
-                                 hmdEnabled: false; <!-- VR uchun emas -->
+                                 hmdEnabled: false;
                                  reverseMouseDrag: false;
                                  enabled: true;">
             <a-entity id="camera" 
                       camera="active: true; fov: 65;"
-                      position="0 1.6 0"> <!-- Ko'z balandligi -->
+                      position="0 1.6 0">
             </a-entity>
         </a-entity>
 
-        <!-- GLB Model -->
-        <a-gltf-model
-            src="#buildingAsset"
-            id="mainBuilding"
-            position="0 0 0"
-            scale="0.5 0.5 0.5"
-            animation-mixer
-            visible="true">
-        </a-gltf-model>
-
-        <a-plane id="groundPlane" position="0 -0.01 0" rotation="-90 0 0" width="150" height="150"
-                 color="#B0BEC5" visible="true"></a-plane>
-
+        <a-gltf-model src="#buildingAsset" id="mainBuilding" position="0 0 0" scale="0.5 0.5 0.5" animation-mixer visible="true"></a-gltf-model>
+        <a-plane id="groundPlane" position="0 -0.01 0" rotation="-90 0 0" width="150" height="150" color="#B0BEC5" visible="true"></a-plane>
         <a-sky color="#B3E5FC"></a-sky>
-
         <a-light type="ambient" color="#FFF" intensity="0.7"></a-light>
         <a-light type="directional" color="#FFF" intensity="0.8" position="-2 4 3"></a-light>
     </a-scene>
 
-    <!-- UI Elementlari uchun umumiy konteyner -->
     <div class="ui-container">
-        <!-- Ekranning pastki qismi joystik uchun -->
         <div id="joystick-area">
-             <div id="joystick-nipple-container"></div> <!-- Joystik shu yerda paydo bo'ladi -->
+             <div id="joystick-nipple-container"></div>
         </div>
-
-        <!-- Yuqori qismdagi boshqaruvlar -->
         <div class="top-controls">
             <div>
                 <button id="btnHeightUp">▲ Balandlik</button>
@@ -148,7 +101,7 @@
     <script>
         const sceneEl = document.getElementById('myScene');
         const playerRigEl = document.getElementById('playerRig');
-        const cameraEl = document.getElementById('camera');
+        // const cameraEl = document.getElementById('camera'); // Agar kamera bilan alohida ishlash kerak bo'lsa
         const buildingModelEl = document.getElementById('mainBuilding');
         
         const joystickArea = document.getElementById('joystick-area');
@@ -164,134 +117,104 @@
         const PLAYER_Y_STEP = 0.15;
         const MODEL_SCALE_STEP = 0.05;
         const MIN_MODEL_SCALE = 0.01;
-        const MIN_PLAYER_Y = -20; // Minus darajalar uchun
+        const MIN_PLAYER_Y = -20;
         const MAX_PLAYER_Y = 30;
-
-        const MOVEMENT_SPEED = 0.07; // Harakat tezligi (WASD va Joystik uchun)
+        const MOVEMENT_SPEED = 0.07;
         
-        let keys = {}; // Klaviatura uchun
+        let keys = {};
         let joystickManager = null;
         let moveForward = 0;
         let moveRight = 0;
 
-        function isMobile() {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        }
+        function isMobile() { return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent); }
 
+        // Nazoratni yoqish/o'chirish (ARda ham yoniq qoladi)
         function setControlsActive(isActive) {
+            // WASD faqat PCda kerak, lekin ARda ham yoqib qo'yamiz (sizning talabingizga binoan)
             if (playerRigEl.components['wasd-controls']) {
-                playerRigEl.setAttribute('wasd-controls', 'enabled', !isMobile() && isActive);
+                playerRigEl.setAttribute('wasd-controls', 'enabled', isActive); // Doim yoniq, agar isActive true bo'lsa
             }
+            // Look controls (sensorli/sichqoncha aylanish) ham doim yoniq
             if (playerRigEl.components['look-controls']) {
                 playerRigEl.setAttribute('look-controls', 'enabled', isActive);
-                // Mobil uchun pointerLockni o'chiramiz, PC uchun kerak bo'lsa yoqamiz
-                playerRigEl.setAttribute('look-controls', 'pointerLockEnabled', !isMobile() && isActive); 
+                playerRigEl.setAttribute('look-controls', 'pointerLockEnabled', !isMobile() && isActive);
                 if (isActive) playerRigEl.components['look-controls'].play();
-                else playerRigEl.components['look-controls'].pause();
+                else playerRigEl.components['look-controls'].pause(); // Bu qator shart bo'lmasligi mumkin, agar doim yoniq bo'lsa
             }
+            // Joystik mobil va aktiv holatda ko'rinadi
             if (joystickNippleContainer) {
                  joystickNippleContainer.style.display = (isMobile() && isActive) ? 'block' : 'none';
             }
-             // UI tugmalari doim ko'rinib turadi va ishlaydi
-            document.querySelector('.top-controls').style.pointerEvents = isActive ? 'auto' : 'none';
-            joystickArea.style.pointerEvents = (isMobile() && isActive) ? 'auto' : 'none';
+            // UI tugmalari va joystik hududi doim interaktiv
+            document.querySelector('.top-controls').style.pointerEvents = 'auto';
+            joystickArea.style.pointerEvents = (isMobile() && isActive) ? 'auto' : 'none'; // Joystik hududi faqat mobil va aktivda ishlaydi
 
-            console.log(`Controls set to: ${isActive}, Mobile: ${isMobile()}`);
+            console.log(`Controls set to: ${isActive} (AR mode or not, they remain conceptually active). Mobile: ${isMobile()}`);
         }
 
+
         function setupJoystick() {
-            if (isMobile() && !joystickManager) {
+            if (isMobile() && !joystickManager) { // Faqat mobil va joystik yo'q bo'lsa yaratiladi
                 const options = {
-                    zone: joystickArea, // Joystik butun pastki hududda paydo bo'ladi
-                    mode: 'dynamic',    // Bosilgan joyda paydo bo'ladi
-                    // position: { left: '50%', top: '50%' }, // `dynamic` uchun bu shart emas
-                    color: 'rgba(255,255,255,0.5)',
-                    size: 100,          // Joystikning umumiy o'lchami
-                    threshold: 0.1,
-                    fadeTime: 250,      // Yo'qolish vaqti
-                    restJoystick: true, // Qo'yib yuborganda markazga qaytadi
-                    // shape: 'circle', // Yoki 'square'
-                    dynamicPage: true,   // Sahifani aylantirishni oldini oladi
-                    front: true, // Boshqa elementlardan ustun turadi (CSS orqali ham sozlash mumkin)
-                    follow: false // Sichqoncha/barmoqni kuzatib yurmaydi, bosilgan joyda qoladi
+                    zone: joystickArea, mode: 'dynamic', color: 'rgba(255,255,255,0.5)',
+                    size: 100, threshold: 0.1, fadeTime: 150, // FadeTime qisqartirildi
+                    restJoystick: true, dynamicPage: true,
                 };
                 joystickManager = nipplejs.create(options);
                 joystickManager.on('added', function(evt, nipple) {
-                    // Joystik paydo bo'lganda uning konteynerini joylashtiramiz
                     joystickNippleContainer.style.display = 'block';
                     nipple.on('move', function (evt, data) {
                         const angle = data.angle.radian;
-                        const force = data.force / (nipple.options.size / 2); // Kuchni normallashtirish
+                        const force = data.force / (nipple.options.size / 2);
                         moveForward = Math.sin(angle) * force;
                         moveRight = Math.cos(angle) * force;
                     });
                     nipple.on('end', function () {
-                        moveForward = 0;
-                        moveRight = 0;
-                        // Joystik konteynerini yashirish
-                        joystickNippleContainer.style.left = '0px';
-                        joystickNippleContainer.style.top = '0px';
-                        joystickNippleContainer.style.transform = `translate(0px, 0px)`;
-                        joystickNippleContainer.style.display = 'none'; // Yoki `nipple.destroy()`
+                        moveForward = 0; moveRight = 0;
+                        joystickNippleContainer.style.display = 'none';
                     });
-                    // Joystikni dinamik joylashtirish
                     joystickNippleContainer.style.position = 'absolute';
                     joystickNippleContainer.style.left = `${nipple.position.x - (nipple.options.size / 2)}px`;
                     joystickNippleContainer.style.top = `${nipple.position.y - joystickArea.offsetTop - (nipple.options.size / 2)}px`;
-
-                }).on('removed', function(evt, nipple) {
-                    // joystikNippleContainer.style.display = 'none';
                 });
+            } else if (!isMobile() && joystickManager) { // PCda joystikni o'chirish
+                joystickManager.destroy();
+                joystickManager = null;
+                if(joystickNippleContainer) joystickNippleContainer.style.display = 'none';
             }
         }
         
-        // Klaviatura hodisalari
-        document.addEventListener('keydown', (event) => { if (!sceneEl.is('ar-mode')) keys[event.key.toLowerCase()] = true; });
-        document.addEventListener('keyup', (event) => keys[event.key.toLowerCase()] = false);
+        document.addEventListener('keydown', (event) => { keys[event.key.toLowerCase()] = true; });
+        document.addEventListener('keyup', (event) => { keys[event.key.toLowerCase()] = false; });
 
-        // Asosiy yangilanish sikli (tick)
         AFRAME.registerComponent('game-controller', {
             tick: function (time, timeDelta) {
-                if (sceneEl.is('ar-mode')) { // AR rejimida virtual harakatni to'xtatamiz
-                    moveForward = 0;
-                    moveRight = 0;
-                    for(let key in keys) keys[key] = false; // Klaviatura holatini ham tozalash
-                    return;
-                }
+                // AR rejimida ham virtual harakatni cheklash uchun QO'SHIMCHA TEKSHIRUVlar kerak bo'lishi mumkin
+                // Hozircha harakat doim ishlaydi
+                // if (sceneEl.is('ar-mode')) {
+                //     // ARda virtual harakatni kamaytirish yoki maxsus logikani ishlatish
+                // }
 
-                const dt = timeDelta / 1000; // Sekundlarda
+                const dt = timeDelta / 1000;
                 let moveDirection = new THREE.Vector3(0,0,0);
                 const playerObject = playerRigEl.object3D;
 
-                // Klaviatura harakati
-                let keyForward = 0;
-                let keyRight = 0;
+                let keyForward = 0, keyRight = 0;
                 if (keys['w'] || keys['arrowup']) keyForward = 1;
                 if (keys['s'] || keys['arrowdown']) keyForward = -1;
                 if (keys['a'] || keys['arrowleft']) keyRight = -1;
                 if (keys['d'] || keys['arrowright']) keyRight = 1;
 
-                // Joystik va Klaviatura harakatini birlashtirish
-                // Agar joystik faol bo'lsa, klaviaturani e'tiborsiz qoldirish yoki aksincha
-                let finalForward = moveForward !== 0 ? -moveForward : keyForward; // nipplejs sin() oldinga musbat, cos() o'ngga musbat
+                let finalForward = moveForward !== 0 ? -moveForward : keyForward;
                 let finalRight = moveRight !== 0 ? moveRight : keyRight;
 
                 if (Math.abs(finalForward) > 0.01) moveDirection.z = -finalForward;
                 if (Math.abs(finalRight) > 0.01) moveDirection.x = finalRight;
 
-                if (moveDirection.lengthSq() > 0) {
-                    moveDirection.normalize();
-                }
+                if (moveDirection.lengthSq() > 0) moveDirection.normalize();
                 
-                // Harakatni kameraning aylanishiga moslashtirish
-                // `look-controls` rigga qo'yilganligi uchun `playerObject.rotation.y` dan foydalanamiz
                 moveDirection.applyAxisAngle(new THREE.Vector3(0, 1, 0), playerObject.rotation.y);
-                
                 playerObject.position.addScaledVector(moveDirection, MOVEMENT_SPEED * 60 * dt);
-
-                // Balandlik (PC: Shift/Space orqali wasd-controls `fly:true` bilan)
-                // wasd-controls `fly:true` bo'lsa, Q/E yoki Shift/Space bilan balandlikni o'zgartiradi.
-                // UI tugmalari alohida ishlaydi.
             }
         });
 
@@ -299,72 +222,62 @@
             console.log('A-Frame sahna yuklandi.');
             if (arStatusMsgEl) arStatusMsgEl.textContent = "Sahna yuklandi. ARga tayyor.";
             
-            sceneEl.setAttribute('game-controller', ''); // Komponentni sahnaga qo'shish
-            setupJoystick();
+            sceneEl.setAttribute('game-controller', '');
+            setupJoystick(); // Dastlab joystikni sozlash (agar mobil bo'lsa)
 
-            buildingModelEl.addEventListener('model-loaded', function () {
-                console.log('GLB model yuklandi.');
-                if (arStatusMsgEl && !sceneEl.is('ar-mode')) arStatusMsgEl.textContent = "Model yuklandi. ARga tayyor.";
-            });
-            buildingModelEl.addEventListener('model-error', (e) => {
-                console.error('GLB model yuklashda xatolik!', e.detail.src);
-                if (arStatusDivEl) arStatusDivEl.style.visibility = 'visible';
-                if (arStatusMsgEl) arStatusMsgEl.textContent = "XATOLIK: Model yuklanmadi!";
-            });
+            buildingModelEl.addEventListener('model-loaded', () => { /* ... */ });
+            buildingModelEl.addEventListener('model-error', (e) => { /* ... */ });
 
-            setControlsActive(!sceneEl.is('ar-mode')); // Dastlabki nazorat holati
+            setControlsActive(true); // Dastlab barcha nazoratni yoqish
         });
 
         sceneEl.addEventListener('enter-vr', function () {
             if (sceneEl.is('ar-mode')) {
                 console.log("AR rejimiga kirildi!");
                 if (arStatusDivEl) arStatusDivEl.style.visibility = 'visible';
-                if (arStatusMsgEl) arStatusMsgEl.textContent = "AR Rejimida. Atrofingizga qarang.";
-                setControlsActive(false);
-                // ARda UI tugmalari ham yashirilishi mumkin, agar kerak bo'lmasa
-                // document.querySelector('.top-controls').style.display = 'none';
+                if (arStatusMsgEl) arStatusMsgEl.textContent = "AR Rejimida.";
+                // Nazoratni o'chirmaymiz, chunki siz shuni so'radingiz
+                // setControlsActive(false); // BU QATORNI OLIB TASHLADIK
+                if (joystickManager) joystickManager.destroy(); // ARda joystikni to'liq olib tashlaymiz (ixtiyoriy)
+                if (joystickNippleContainer) joystickNippleContainer.style.display = 'none'; // Vizual qismini ham
             }
         });
 
         sceneEl.addEventListener('exit-vr', function () {
             console.log("AR rejimidan chiqildi!");
             if (arStatusDivEl) arStatusDivEl.style.visibility = 'hidden';
-            setControlsActive(true);
-            // document.querySelector('.top-controls').style.display = 'flex';
+            // Nazoratni qayta yoqish shart emas, chunki u o'chirilmagan edi.
+            // Lekin joystikni qayta yaratish kerak bo'lishi mumkin (agar ARda o'chirilgan bo'lsa)
+            setControlsActive(true); // Nazoratni yana bir bor "yoqilgan" deb belgilaymiz
+            if (isMobile() && !joystickManager) { // Agar mobil va joystik yo'q bo'lsa
+                 setupJoystick(); // Joystikni qayta yaratish
+            }
         });
 
-        // UI Tugmalari
-        btnHeightUpEl.addEventListener('click', () => {
+        btnHeightUpEl.addEventListener('click', () => { /* ... (avvalgidek) ... */
             const currentPos = playerRigEl.getAttribute('position');
-            let newY = currentPos.y + PLAYER_Y_STEP;
-            if (newY > MAX_PLAYER_Y) newY = MAX_PLAYER_Y;
+            let newY = currentPos.y + PLAYER_Y_STEP; if (newY > MAX_PLAYER_Y) newY = MAX_PLAYER_Y;
             playerRigEl.setAttribute('position', { x: currentPos.x, y: newY, z: currentPos.z });
         });
-        btnHeightDownEl.addEventListener('click', () => {
+        btnHeightDownEl.addEventListener('click', () => { /* ... (avvalgidek) ... */
             const currentPos = playerRigEl.getAttribute('position');
-            let newY = currentPos.y - PLAYER_Y_STEP;
-            if (newY < MIN_PLAYER_Y) newY = MIN_PLAYER_Y;
+            let newY = currentPos.y - PLAYER_Y_STEP; if (newY < MIN_PLAYER_Y) newY = MIN_PLAYER_Y;
             playerRigEl.setAttribute('position', { x: currentPos.x, y: newY, z: currentPos.z });
         });
-        btnScaleUpEl.addEventListener('click', () => {
+        btnScaleUpEl.addEventListener('click', () => { /* ... (avvalgidek) ... */
             const s = buildingModelEl.object3D.scale;
             buildingModelEl.object3D.scale.set(s.x + MODEL_SCALE_STEP, s.y + MODEL_SCALE_STEP, s.z + MODEL_SCALE_STEP);
         });
-        btnScaleDownEl.addEventListener('click', () => {
+        btnScaleDownEl.addEventListener('click', () => { /* ... (avvalgidek) ... */
             const s = buildingModelEl.object3D.scale;
             let newS = Math.max(MIN_MODEL_SCALE, s.x - MODEL_SCALE_STEP);
             buildingModelEl.object3D.scale.set(newS, newS, newS);
         });
 
-        // Oyna o'lchami o'zgarganda joystikni qayta sozlash
         window.addEventListener('resize', () => {
-            if (joystickManager) {
-                joystickManager.destroy();
-                joystickManager = null;
-            }
-            setupJoystick(); // Qayta yaratish
+            if (joystickManager) { joystickManager.destroy(); joystickManager = null; }
+            setupJoystick();
         });
-
     </script>
 </body>
 </html>
