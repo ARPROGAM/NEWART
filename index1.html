@@ -2,87 +2,381 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>AR Test (untitled2) - Yangi CDN</title>
-    <meta name="description" content="A-Frame AR - untitled2.glb">
-    <!-- A-Frame kutubxonasini cdnjs.cloudflare.com dan import qilish -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.5.0/aframe.min.js"></script>
+    <title>Keng Qamrovli AR Tur</title>
+    <meta name="description" content="A-Frame AR Tur - untitled2.glb">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <!-- A-Frame kutubxonasi (lokal yoki CDN) -->
+    <script src="aframe-v1.5.0.min.js"></script> <!-- Agar lokal yuklagan bo'lsangiz -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.5.0/aframe.min.js"></script> -->
+
+    <!-- NippleJS (Ekran joystigi uchun) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
+
+    <style>
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        a-scene { height: 100vh; width: 100vw; }
+
+        /* UI Elementlari uchun Stillar */
+        .controls-container {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .controls-container button, .scale-controls button, .height-controls button {
+            padding: 10px 15px;
+            font-size: 14px;
+            background-color: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .controls-container button:hover, .scale-controls button:hover, .height-controls button:hover {
+            background-color: rgba(0,0,0,0.8);
+        }
+
+        #joystick-zone {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%); /* Markazlashtirish */
+            width: 150px;
+            height: 150px;
+            /* background-color: rgba(200,200,200,0.3); */ /* Orqa fon (ixtiyoriy) */
+            border-radius: 50%;
+            z-index: 10;
+            display: none; /* Dastlab yashirilgan, faqat mobil uchun */
+        }
+        
+        .scale-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .height-controls {
+            position: fixed;
+            top: 120px; /* Yoki boshqa joy */
+            right: 20px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #ar-status-overlay {
+            position: fixed;
+            bottom: 100px; /* Joystik ustida */
+            width: 100%;
+            text-align: center;
+            z-index: 1;
+            visibility: hidden;
+            background-color: rgba(0,0,0,0.6);
+            color: white;
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        /* AR rejimida ba'zi UI elementlarini yashirish */
+        a-scene[ar-mode] #joystick-zone,
+        a-scene[ar-mode] .height-controls, /* ARda balandlikni o'zgartirish noqulay bo'lishi mumkin */
+        a-scene[ar-mode] .scale-controls { /* ARda masshtabni o'zgartirish noqulay bo'lishi mumkin */
+            /* display: none; */ /* Agar ARda ham kerak bo'lsa, bu qatorni o'chiring */
+        }
+
+    </style>
 </head>
 <body>
     <a-scene
-        webxr="optionalFeatures: dom-overlay;"
+        webxr="optionalFeatures: dom-overlay, hit-test;"
         ar-mode-ui="enabled: true; overlayElement: #ar-status-overlay;"
         renderer="colorManagement: true; physicallyCorrectLights: true;"
-        background="color: #FAFAFA"
-        id="myARScene">
+        background="color: #DDDDDD"
+        id="myARSceneElement"
+        physics="driver: local; debug: false;"> <!-- Fizika (agar kerak bo'lsa) -->
 
-        <a-assets timeout="45000"> <!-- Resurslar uchun kutish vaqtini oshirdik -->
-            <a-asset-item id="buildingModel" src="untitled2.glb"></a-asset-item>
+        <a-assets timeout="60000">
+            <a-asset-item id="mainModelAsset" src="untitled2.glb"></a-asset-item>
         </a-assets>
 
-        <!-- Foydalanuvchi kamerasi -->
-        <a-camera position="0 1.6 0" look-controls="magicWindowEnabled: false"></a-camera>
+        <!-- Kamera Rig (O'yinchi) -->
+        <!-- Bu 'player' harakat va aylanish uchun asosiy element bo'ladi -->
+        <a-entity id="player"
+                  position="0 0 0"
+                  kinematic-body="radius: 0.5; height: 1.7;" <!-- Oddiy fizika tanasi -->
+                  universal-controls="movementControls: wasd, nipple;
+                                      rotationControls: look, nippleturn;
+                                      fly: false;
+                                      movementEnabled: true;
+                                      rotationEnabled: true;
+                                      movementSpeed: 3;
+                                      nippleMovementSpeed: 0.05;
+                                      nippleTurnSpeed: 0.03;">
+            <!-- Kamera o'yinchining "ko'zi" -->
+            <a-entity id="camera"
+                      camera="active: true"
+                      position="0 1.6 0" 
+                      look-controls="pointerLockEnabled: true; magicWindowTrackingEnabled: false; touchEnabled: true; mouseEnabled: true;">
+                <a-cursor id="cursor" color="white" fuse="false" visible="false"></a-cursor>
+            </a-entity>
+        </a-entity>
 
         <!-- Sizning GLB modelingiz -->
         <a-gltf-model
-            src="#buildingModel"
-            id="mainARModel"
-            position="0 0.5 -2"   <!-- Modelni biroz yuqoriroq va oldinroq joylashtiramiz -->
-            scale="0.3 0.3 0.3"     <!-- Boshlang'ich masshtab, kerak bo'lsa o'zgartiring -->
-            animation-mixer        <!-- Agar GLBda animatsiyalar bo'lsa -->
+            src="#mainModelAsset"
+            id="my3DModel"
+            position="0 0 -5"   <!-- Boshlang'ich pozitsiya, o'zgartiring -->
+            scale="0.5 0.5 0.5"     <!-- Boshlang'ich masshtab, o'zgartiring -->
+            animation-mixer
+            static-body="shape: auto;" <!-- Oddiy fizika uchun -->
             visible="true">
         </a-gltf-model>
 
+        <!-- Yer (oddiy) -->
+        <a-plane id="ground" position="0 0 0" rotation="-90 0 0" width="50" height="50"
+                 color="#7BC8A4" static-body shadow="receive: true" visible="true"></a-plane>
+
         <!-- Yorug'liklar -->
-        <a-light type="ambient" color="#FFF" intensity="0.9"></a-light>
-        <a-light type="directional" color="#FFF" intensity="0.7" position="-0.5 2 1"></a-light>
+        <a-light type="ambient" color="#FFFFFF" intensity="0.7"></a-light>
+        <a-light type="directional" color="#FFFFFF" intensity="0.6" position="-1 3 1.5"
+                 shadow-camera-left="-10" shadow-camera-right="10"
+                 shadow-camera-top="10" shadow-camera-bottom="-10"
+                 castShadow="true"></a-light>
 
     </a-scene>
 
-    <!-- AR holati uchun DOM Overlay -->
-    <div id="ar-status-overlay" style="position: fixed; bottom: 10px; width: 100%; text-align: center; z-index: 1; visibility: hidden; background-color: rgba(0,0,0,0.6); color: white; padding: 8px; font-family: sans-serif; font-size: 14px;">
-        <span>AR rejimiga o'tishga tayyor. Atrofni skanerlang.</span>
+    <!-- UI Elementlari -->
+    <div id="joystick-zone"></div>
+
+    <div class="scale-controls">
+        <button id="scaleUpBtn">Masshtab +</button>
+        <button id="scaleDownBtn">Masshtab -</button>
+    </div>
+
+    <div class="height-controls">
+        <button id="heightUpBtn">Balandlik + (Kamera)</button>
+        <button id="heightDownBtn">Balandlik - (Kamera)</button>
+    </div>
+
+    <div id="ar-status-overlay">
+        <span id="ar-status-message">AR rejimiga o'tish uchun tayyor.</span>
     </div>
 
     <script>
-        const sceneElement = document.getElementById('myARScene');
-        const arStatusOverlay = document.getElementById('ar-status-overlay');
+        const sceneEl = document.getElementById('myARSceneElement');
+        const playerEl = document.getElementById('player');
+        const cameraEl = document.getElementById('camera');
+        const modelEl = document.getElementById('my3DModel');
+        const joystickZone = document.getElementById('joystick-zone');
+        
+        const scaleUpBtn = document.getElementById('scaleUpBtn');
+        const scaleDownBtn = document.getElementById('scaleDownBtn');
+        const heightUpBtn = document.getElementById('heightUpBtn');
+        const heightDownBtn = document.getElementById('heightDownBtn');
+        const arStatusMessage = document.getElementById('ar-status-message');
 
-        if (sceneElement) {
-            sceneElement.addEventListener('loaded', function () {
-                console.log('A-Frame sahnasi yuklandi!');
-            });
+        let nippleManager = null;
+        let forwardBackward = 0;
+        let leftRight = 0;
+        let turn = 0; // Joystik bilan aylanish uchun
 
-            sceneElement.addEventListener('enter-vr', function () {
-                if (sceneElement.is('ar-mode')) {
-                    console.log("AR rejimiga kirildi!");
-                    arStatusOverlay.style.visibility = 'visible';
-                    arStatusOverlay.querySelector('span').textContent = "AR Rejimida. Ob'ektni joylashtirish uchun yuzani toping.";
-                }
-            });
+        const MOVEMENT_SPEED_KEYBOARD = 0.05; // Klaviatura uchun harakat tezligi
+        const ROTATION_SPEED_KEYBOARD = 0.03; // Klaviatura uchun aylanish tezligi
+        const MOVEMENT_SPEED_NIPPLE = 0.05;   // Joystik uchun harakat tezligi
+        const ROTATION_SPEED_NIPPLE = 2.0;    // Joystik uchun aylanish darajasi
+        const PLAYER_HEIGHT_CHANGE_SPEED = 0.1;
+        const MODEL_SCALE_CHANGE_SPEED = 0.05;
 
-            sceneElement.addEventListener('exit-vr', function () {
-                console.log("AR rejimidan chiqildi!");
-                arStatusOverlay.style.visibility = 'hidden';
-            });
+        // Mobil qurilma ekanligini tekshirish
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
 
-            // GLB model yuklanishini tekshirish (ixtiyoriy)
-            const modelElement = document.getElementById('mainARModel');
-            if (modelElement) {
-                modelElement.addEventListener('model-loaded', function () {
-                    console.log('GLB model (untitled2.glb) yuklandi!');
-                    // Model yuklangandan keyin kerakli o'lchamlarni o'rnatishingiz mumkin
-                    // Masalan, uning chegaralarini o'lchab, masshtabini moslashtirish
+        // Joystikni sozlash
+        function setupNipple() {
+            if (isMobile() && !nippleManager) {
+                joystickZone.style.display = 'block';
+                const options = {
+                    zone: joystickZone,
+                    mode: 'static',
+                    position: { left: '50%', top: '50%' },
+                    color: 'rgba(255,255,255,0.5)',
+                    size: 100,
+                    threshold: 0.1 // Harakatni boshlash uchun minimal siljish
+                };
+                nippleManager = nipplejs.create(options);
+
+                nippleManager.on('move', function (evt, data) {
+                    const angle = data.angle.radian;
+                    const force = data.force;
+                    
+                    // Harakat
+                    forwardBackward = Math.sin(angle) * force;
+                    leftRight = Math.cos(angle) * force;
+
+                    // Aylanish (agar alohida "turn" joystik bo'lmasa, bu qismni o'chiring)
+                    // Yoki ekranning o'ng tomonini surish bilan aylanishni `look-controls` bajaradi.
+                    // Agar joystik bilan aylanishni xohlasangiz, bu qismni faollashtiring.
+                    // Bu yerda `data.vector.x` ni aylanish uchun ishlatish mumkin,
+                    // lekin bu odatda ikkinchi joystik uchun bo'ladi.
+                    // Hozircha `look-controls` ga tayanamiz.
                 });
-                modelElement.addEventListener('model-error', function (event) {
-                    console.error('GLB model (untitled2.glb) yuklashda xatolik:', event.detail.src);
-                    arStatusOverlay.style.visibility = 'visible';
-                    arStatusOverlay.querySelector('span').textContent = "Xatolik: Model yuklanmadi. Yo'lni tekshiring.";
+
+                nippleManager.on('end', function () {
+                    forwardBackward = 0;
+                    leftRight = 0;
+                    turn = 0;
+                });
+            } else if (!isMobile() && nippleManager) {
+                nippleManager.destroy();
+                nippleManager = null;
+                joystickZone.style.display = 'none';
+            }
+        }
+        
+        // Klaviatura nazorati (PC uchun)
+        let keys = {};
+        document.addEventListener('keydown', (event) => keys[event.key.toLowerCase()] = true);
+        document.addEventListener('keyup', (event) => keys[event.key.toLowerCase()] = false);
+
+        // Tick (har bir kadrda) funksiyasi
+        sceneEl.addEventListener('loaded', () => {
+            console.log("Sahna yuklandi!");
+            if (arStatusMessage) arStatusMessage.textContent = "Sahna yuklandi. ARga kirishga tayyor.";
+            setupNipple(); // Sahna yuklangandan keyin joystikni sozlash
+
+            if (modelEl) {
+                modelEl.addEventListener('model-loaded', () => {
+                    console.log('GLB model yuklandi!');
+                    if (arStatusMessage && !sceneEl.is('ar-mode')) arStatusMessage.textContent = "Model yuklandi. ARga tayyor.";
+                });
+                modelEl.addEventListener('model-error', (e) => {
+                    console.error('GLB model yuklashda xatolik!', e.detail.src);
+                    if (arStatusMessage) arStatusMessage.textContent = "XATOLIK: Model yuklanmadi!";
                 });
             }
 
-        } else {
-            console.error("A-Frame sahnasi topilmadi!");
-        }
+            // Asosiy tick loop
+            AFRAME.registerComponent('game-loop', {
+                tick: function (time, timeDelta) {
+                    if (sceneEl.is('ar-mode')) {
+                        // AR rejimida virtual harakatni cheklaymiz yoki maxsus logikani ishlatamiz
+                        // Hozircha ARda virtual harakatni o'chiramiz
+                        return;
+                    }
+
+                    const dt = timeDelta / 1000; // Sekundlarda
+                    let moveVector = new THREE.Vector3(0,0,0);
+                    let playerRotation = playerEl.object3D.rotation; // Euler
+                    let playerPosition = playerEl.object3D.position;
+
+                    // Klaviatura harakati
+                    if (keys['w']) moveVector.z -= 1;
+                    if (keys['s']) moveVector.z += 1;
+                    if (keys['a']) moveVector.x -= 1;
+                    if (keys['d']) moveVector.x += 1;
+                    
+                    // Joystik harakati (nipplejs)
+                    if (nippleManager) {
+                        // Joystikdan kelayotgan qiymatlar to'g'ridan-to'g'ri oldinga/orqaga va chapga/o'ngga harakatga ta'sir qiladi
+                        // forwardBackward (joystik Y) -> moveVector.z
+                        // leftRight (joystik X) -> moveVector.x
+                        // Bu yerda ehtiyot bo'lish kerak, angle va force dan kelib chiqib to'g'ri hisoblash kerak
+                        // Oldingi nipplejs logikasi to'g'ridan-to'g'ri forwardBackward/leftRight ni o'zgartiradi
+                        // Biz ularni bu yerda ishlatamiz
+                        if (Math.abs(forwardBackward) > 0.01) moveVector.z -= forwardBackward * 1.5; // Koeffitsientni sozlang
+                        if (Math.abs(leftRight) > 0.01)    moveVector.x += leftRight * 1.5;    // Koeffitsientni sozlang
+                    }
+
+                    // Harakat vektorini normallashtirish (diagonal harakat tezroq bo'lmasligi uchun)
+                    if (moveVector.lengthSq() > 0) {
+                        moveVector.normalize();
+                    }
+
+                    // Harakat vektorini o'yinchining aylanishiga moslashtirish
+                    moveVector.applyEuler(new THREE.Euler(0, playerRotation.y, 0, 'YXZ'));
+                    
+                    // Pozitsiyani yangilash
+                    playerPosition.addScaledVector(moveVector, MOVEMENT_SPEED_KEYBOARD * 60 * dt); // 60 FPS ga moslashtirish
+
+                    // Balandlikni o'zgartirish (Klaviatura: Q/E)
+                    if (keys['q']) playerPosition.y -= PLAYER_HEIGHT_CHANGE_SPEED * 60 * dt;
+                    if (keys['e']) playerPosition.y += PLAYER_HEIGHT_CHANGE_SPEED * 60 * dt;
+                    // Minimal va maksimal balandlikni cheklash
+                    if (playerPosition.y < 0.1) playerPosition.y = 0.1; 
+                    // if (playerPosition.y > 5) playerPosition.y = 5;
+
+
+                    // Joystik bilan aylanish (agar look-controls o'rniga kerak bo'lsa)
+                    // if (nippleManager && Math.abs(turn) > 0.01) {
+                    //    playerRotation.y -= turn * ROTATION_SPEED_NIPPLE * dt;
+                    // }
+                    
+                    playerEl.object3D.position.set(playerPosition.x, playerPosition.y, playerPosition.z);
+                }
+            });
+            sceneEl.setAttribute('game-loop', ''); // Komponentni sahnaga qo'shish
+        });
+
+
+        // AR rejimi hodisalari
+        sceneEl.addEventListener('enter-vr', function () {
+            if (sceneEl.is('ar-mode')) {
+                console.log("AR rejimiga kirildi!");
+                if (arStatusMessage) arStatusMessage.textContent = "AR Rejimida. Atrofni skanerlang.";
+                if (joystickZone) joystickZone.style.display = 'none'; // ARda joystikni yashirish
+                // ARda kamera nazorati qurilma tomonidan amalga oshiriladi.
+                // `look-controls` va `wasd-controls` (yoki custom) ni o'chirish kerak bo'lishi mumkin.
+                // universal-controls buni qisman hal qiladi.
+                playerEl.removeAttribute('universal-controls'); // ARda virtual harakatni o'chirish
+                // AR kamerasi avtomatik boshqariladi
+            }
+        });
+
+        sceneEl.addEventListener('exit-vr', function () {
+            console.log("AR rejimidan chiqildi!");
+            if (arStatusMessage) arStatusMessage.textContent = "Sahna yuklandi. ARga kirishga tayyor.";
+            if (isMobile()) joystickZone.style.display = 'block'; // Mobil bo'lsa joystikni qayta ko'rsatish
+            playerEl.setAttribute('universal-controls', "movementControls: wasd, nipple; rotationControls: look, nippleturn; fly: false; movementEnabled: true; rotationEnabled: true; movementSpeed: 3; nippleMovementSpeed: 0.05; nippleTurnSpeed: 0.03;"); // Nazoratni qayta yoqish
+        });
+
+        // Masshtab tugmalari
+        scaleUpBtn.addEventListener('click', () => {
+            const currentScale = modelEl.object3D.scale;
+            modelEl.object3D.scale.set(currentScale.x + MODEL_SCALE_CHANGE_SPEED, currentScale.y + MODEL_SCALE_CHANGE_SPEED, currentScale.z + MODEL_SCALE_CHANGE_SPEED);
+        });
+        scaleDownBtn.addEventListener('click', () => {
+            const currentScale = modelEl.object3D.scale;
+            const newScale = Math.max(0.01, currentScale.x - MODEL_SCALE_CHANGE_SPEED); // Minimal masshtab
+            modelEl.object3D.scale.set(newScale, newScale, newScale);
+        });
+
+        // Balandlik tugmalari (Kameraning Y pozitsiyasini o'zgartiradi)
+        heightUpBtn.addEventListener('click', () => {
+            playerEl.object3D.position.y += PLAYER_HEIGHT_CHANGE_SPEED;
+        });
+        heightDownBtn.addEventListener('click', () => {
+            if (playerEl.object3D.position.y > PLAYER_HEIGHT_CHANGE_SPEED + 0.1) { // Yer ostiga tushib ketmaslik uchun
+                 playerEl.object3D.position.y -= PLAYER_HEIGHT_CHANGE_SPEED;
+            }
+        });
+
+        // Oynani qayta o'lchamlaganda joystikni qayta sozlash (agar kerak bo'lsa)
+        window.addEventListener('resize', () => {
+            if (nippleManager) {
+                nippleManager.destroy();
+                nippleManager = null;
+            }
+            setupNipple();
+        });
+
     </script>
 </body>
 </html>
