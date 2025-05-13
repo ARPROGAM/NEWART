@@ -155,12 +155,7 @@
                 console.log("AR rejimiga kirildi!");
                 if (arStatusMessageDiv) arStatusMessageDiv.style.visibility = 'visible';
                 if (arStatusMessage) arStatusMessage.textContent = "AR Rejimida. Atrofni skanerlang.";
-                
-                // ARda virtual harakatni (WASD) o'chiramiz, faqat jismoniy harakat
-                playerRigEl.removeAttribute('wasd-controls');
-                // ARda modelning pozitsiyasi va masshtabi odatda o'zgarmas bo'lishi kerak
-                // Lekin agar xohlasangiz, bu tugmalarni ARda ham ishlaydigan qilib qoldirishingiz mumkin
-                // document.querySelector('.ui-controls').style.display = 'none'; // Agar ARda UI kerak bo'lmasa
+                wwwwwwwwwdocument.querySelector('.ui-controls').style.display = 'none'; // Agar ARda UI kerak bo'lmasa
             }
         });
 
@@ -243,10 +238,10 @@
 
         // Faqat mobil qurilmalarda sensorli harakatni qo'shish
         // Bu oddiy "pan" uchun, haqiqiy yurish uchun ancha murakkab bo'ladi
-        // if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        //    sceneEl.canvas.addEventListener('touchstart', onTouchStart, {passive: false});
-        //    sceneEl.canvas.addEventListener('touchmove', onTouchMove, {passive: false});
-        //    sceneEl.canvas.addEventListener('touchend', onTouchEnd, {passive: false});
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+           sceneEl.canvas.addEventListener('touchstart', onTouchStart, {passive: false});
+           sceneEl.canvas.addEventListener('touchmove', onTouchMove, {passive: false});
+           sceneEl.canvas.addEventListener('touchend', onTouchEnd, {passive: false});
         // }
         // Hozircha mobil uchun asosiy harakatni `look-controls` orqali aylanish va ARda jismoniy harakatga qoldiramiz.
         // `wasd-controls` mobil uchun ham qisman sensorli harakatni (masalan, bir barmoq bilan surish) ta'minlashi mumkin,
