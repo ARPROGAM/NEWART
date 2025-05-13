@@ -1,185 +1,130 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"> <!-- user-scalable=no muhim -->
-    <title>Mening AR Bino Turim</title>
-    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
-    <!-- NippleJS kutubxonasini qo'shish -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
-    
-    <style>
-        /* ... (oldingi stillaringiz) ... */
-
-        model-viewer {
-            width: 100%;
-            height: 500px;
-            background-color: #e8e8e8;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            position: relative; /* Joystikni joylashtirish uchun */
-        }
-
-        /* Joystik uchun konteyner */
-        #joystick-container {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 150px; /* Joystik o'lchami */
-            height: 150px;
-            opacity: 0.7;
-            z-index: 10; /* Model-viewer ustida bo'lishi uchun */
-        }
-
-        /* AR Rejimida joystikni yashirish */
-        model-viewer[ar-status="session-started"] ~ #joystick-container {
-            display: none;
-        }
-    </style>
+    <meta charset="utf-8">
+    <title>Mening AR Dunyom (untitled2)</title>
+    <meta name="description" content="A-Frame yordamida AR sahnasi - untitled2.glb">
+    <!-- A-Frame kutubxonasini import qilish -->
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>Binomni ARda Ko'ring!</h1>
-        <p>Quyidagi 3D modelni aylantirib ko'rishingiz va AR tugmasini bosib, uni o'z atrofingizda jonlantirishingiz mumkin. 3D rejimida harakatlanish uchun joystikdan foydalaning (AR rejimida joystik yashiriladi).</p>
+    <a-scene
+        webxr="optionalFeatures: dom-overlay, hit-test;"
+        ar-mode-ui="enabled: true; overlayElement: #ar-overlay;" <!-- AR tugmasini va overlayni ko'rsatadi -->
+        renderer="colorManagement: true; physicallyCorrectLights: true;"
+        background="color: #ECECEC"
+        id="myScene">
 
-        <model-viewer 
-            id="my-building-model"
-            src="untitled2.glb"
-            alt="Mening bino modelim"
-            ar
-            ar-modes="webxr scene-viewer quick-look"
-            camera-controls <!-- Buni o'chirib qo'yish mumkin, agar faqat joystik bilan boshqarmoqchi bo'lsangiz -->
-            environment-image="neutral"
-            shadow-intensity="1.2"
-            disable-pan <!-- Joystik bilan ishlaganda pan (siljitish)ni o'chirish foydali bo'lishi mumkin -->
-            style="width: 100%; height: 500px;">
+        <a-assets timeout="30000"> <!-- Resurslar yuklanishi uchun vaqtni oshirish (30 soniya) -->
+            <!-- Sizning GLB faylingiz -->
+            <a-asset-item id="myBuildingModel" src="untitled2.glb"></a-asset-item>
             
-            <button slot="ar-button" id="ar-button" style="display: none;"></button>
-            <div class="progress-bar" slot="progress-bar">
-                <div class="update-bar"></div>
-            </div>
-        </model-viewer>
+            <!-- (Ixtiyoriy) Atrof-muhit uchun HDRI (agar kerak bo'lsa) -->
+            <!-- <img id="sky" src="your-sky-texture.hdr"> -->
+        </a-assets>
 
-        <!-- Joystik uchun konteyner -->
-        <div id="joystick-container"></div>
+        <!-- Foydalanuvchi kamerasi -->
+        <a-camera position="0 1.6 0" look-controls="magicWindowEnabled: false"></a-camera>
 
-        <p>Agar AR tugmasi ko'rinmasa, qurilmangiz yoki brauzeringiz WebAR'ni qo'llab-quvvatlamasligi mumkin.</p>
-    </div>
+        <!-- Sizning GLB modelingiz -->
+        <!-- position va scale ni modelingizga moslab o'zgartiring -->
+        <!-- Agar modelingiz katta bino bo'lsa, scale ni kichikroq qiling (masalan, 0.1 yoki 0.05) -->
+        <!-- Agar u kichik ob'ekt bo'lsa, scale 1 atrofida bo'lishi mumkin -->
+        <a-gltf-model
+            src="#myBuildingModel"
+            id="main-model"
+            position="0 0 -2.5"  <!-- Dastlab kameradan 2.5 metr oldinda, yer sathida -->
+            scale="0.5 0.5 0.5"    <!-- Boshlang'ich masshtab, o'zgartirishingiz mumkin -->
+            animation-mixer       <!-- Agar GLB ichida animatsiyalar bo'lsa -->
+            visible="true">
+        </a-gltf-model>
 
-    <div class="footer">
-        <!-- ... (footer qismi) ... -->
+        <!-- Atrof-muhit yorug'ligi -->
+        <a-light type="ambient" color="#FFFFFF" intensity="0.8"></a-light>
+        <!-- Yo'naltirilgan yorug'lik (quyosh kabi) -->
+        <a-light type="directional" color="#FFFFFF" intensity="0.6" position="-1 3 2"></a-light>
+
+        <!-- (Ixtiyoriy) Agar modelingiz yerga tekis turishi kerak bo'lsa va ARda yerni aniqlashni xohlasangiz -->
+        <!-- Bu qismni hozircha kommentga olib turamiz, chunki u qo'shimcha sozlash talab qilishi mumkin -->
+        <!-- 
+        <a-entity
+            ar-hit-test="target:#main-model; type:plane; enabled:true"
+            visible="false">
+        </a-entity>
+        <a-plane
+            id="groundPlane"
+            height="100" width="100"
+            rotation="-90 0 0"
+            material="shader:shadow; transparent:true; opacity:0.4"
+            shadow
+            visible="false">
+        </a-plane>
+        -->
+
+    </a-scene>
+
+    <!-- AR UI uchun DOM Overlay (Masalan, ko'rsatmalar yoki tugmalar uchun) -->
+    <div id="ar-overlay" style="position: fixed; bottom: 20px; width: 100%; text-align: center; z-index: 1; visibility: hidden;">
+        <p style="background-color: rgba(0,0,0,0.5); color: white; padding: 10px; border-radius: 5px; display: inline-block;">
+            AR rejimida atrofni skanerlang va kerakli joyga bosing (agar hit-test yoqilgan bo'lsa) yoki ob'ekt avtomatik paydo bo'ladi.
+        </p>
     </div>
 
     <script>
-        const modelViewer = document.getElementById('my-building-model');
-        const joystickContainer = document.getElementById('joystick-container');
-        let joystick = null;
+        const sceneEl = document.querySelector('a-scene');
+        const arOverlay = document.getElementById('ar-overlay');
+        // const modelEl = document.getElementById('main-model'); // Agar model bilan ishlash kerak bo'lsa
 
-        const movementSpeed = 0.03; // Harakat tezligi (o'zgartirishingiz mumkin)
-        const rotationSpeed = 0.02; // Aylanish tezligi (o'zgartirishingiz mumkin)
-
-        // Model yuklangandan keyin joystikni sozlash
-        modelViewer.addEventListener('load', () => {
-            console.log('Model loaded');
-
-            // Agar AR rejimida bo'lmasak joystikni yaratamiz
-            if (!modelViewer.arActive) {
-                createJoystick();
+        sceneEl.addEventListener('enter-vr', function () {
+            if (sceneEl.is('ar-mode')) {
+                console.log("AR rejimiga kirildi!");
+                arOverlay.style.visibility = 'visible'; // ARga kirganda overlayni ko'rsatish
+                // Bu yerda AR rejimi uchun maxsus logikani qo'shishingiz mumkin
             }
         });
 
-        function createJoystick() {
-            if (joystick) {
-                joystick.destroy(); // Eskisini yo'q qilish
-            }
-            const options = {
-                zone: joystickContainer,
-                mode: 'static', // Yoki 'dynamic' yoki 'semi'
-                position: { left: '50%', top: '50%' },
-                color: 'blue',
-                size: 120
-            };
-            joystick = nipplejs.create(options);
+        sceneEl.addEventListener('exit-vr', function () {
+            console.log("AR rejimidan chiqildi!");
+            arOverlay.style.visibility = 'hidden'; // ARdan chiqqanda overlayni yashirish
+        });
 
-            joystick.on('move', function (evt, data) {
-                if (modelViewer.arActive) return; // AR rejimida harakatlanmaymiz
+        // Agar siz hit-test orqali ob'ektni yerga qo'ymoqchi bo'lsangiz,
+        // quyidagi kabi kod kerak bo'ladi:
+        /*
+        const mainModel = document.getElementById('main-model');
+        let hitTestEntity = document.querySelector('[ar-hit-test]');
 
-                const angle = data.angle.radian;
-                const force = data.force > 1 ? 1 : data.force; // Kuchni chegaralash
+        if (hitTestEntity) {
+            mainModel.setAttribute('visible', 'false'); // Dastlab modelni yashirish
 
-                // Kamera orbitasini (pozitsiyasini) o'zgartirish
-                // Bu oddiy yondashuv, yanada murakkabroq "first-person" kamera uchun
-                // `cameraTarget` ni ham o'zgartirish va kamerani oldinga/orqaga siljitish kerak bo'ladi.
-                
-                // Oldinga/orqaga harakat (joystik vertikal harakati)
-                // Bu qism ancha murakkab, chunki model-viewer kamerasi orbitada aylanadi.
-                // Oddiy "cameraTarget"ni o'zgartirish bilan birinchi shaxs kamerasi qilish qiyin.
-                // Hozircha faqat model atrofida aylanishni va yaqinlashishni ko'rsatamiz.
-
-                // Model atrofida aylanish (joystik gorizontal harakati)
-                // Bu `cameraOrbit`ni to'g'ridan-to'g'ri o'zgartirish bilan yaxshi ishlamaydi.
-                // Buning o'rniga `camera-controls` ni vaqtincha o'chirib,
-                // kamera orbitasini matematik hisoblashlar bilan boshqarish kerak.
-                // Yoki, `camera-controls` ni yoqiq qoldirib, joystik faqat qo'shimcha
-                // nozik sozlamalar uchun ishlatilishi mumkin.
-
-                // Oddiyroq yondashuv: Joystik bilan modelni aylantirish (bu kamera harakati emas)
-                // modelViewer.style.transform = `rotateY(${angle * (180/Math.PI)}deg)`; // Bu noto'g'ri usul
-
-                // Eng yaxshi yondashuvlardan biri - model-viewerning o'z kamera API'sidan foydalanish.
-                // Ammo "first-person walk" uchun bu API cheklangan.
-                
-                // Agar siz oddiyroq "orbitada aylanish"ni xohlasangiz:
-                let [yaw, pitch, radius] = modelViewer.getCameraOrbit().split(" ").map(Number);
-                
-                // Joystikning gorizontal harakati bilan YAW (gorizontal aylanish)
-                // Bu yerda `data.vector.x` ni ishlatamiz.
-                const deltaYaw = -data.vector.x * rotationSpeed * force * 100; // Koeffitsientni sozlang
-                modelViewer.cameraOrbit = `${yaw + deltaYaw}deg ${pitch}deg ${radius}m`;
-
-                // Joystikning vertikal harakati bilan PITCH (vertikal aylanish) yoki RADIUS (yaqinlashish)
-                // Radius (yaqinlashish/uzoqlashish)
-                const deltaRadius = -data.vector.y * movementSpeed * force;
-                let newRadius = radius + deltaRadius;
-                if (newRadius < 0.5) newRadius = 0.5; // Minimal radius
-                if (newRadius > 10) newRadius = 10;  // Maksimal radius
-                modelViewer.cameraOrbit = `${yaw + deltaRadius}deg ${pitch}deg ${newRadius}m`;
-
-
-                // Birinchi shaxs kamerasi uchun ancha murakkab mantiq kerak:
-                // 1. Kameraning joriy yo'nalishini olish.
-                // 2. Shu yo'nalish bo'yicha `cameraTarget` va kamera pozitsiyasini siljitish.
-                // `modelViewer.getCameraDirection()` yordam berishi mumkin, lekin u faqat yo'nalish vektorini beradi.
-
-                console.log('Joystick move:', data.vector.x, data.vector.y);
+            hitTestEntity.addEventListener('ar-hit-test-start', (data) => {
+                console.log('Scanning for surfaces...');
+                // Foydalanuvchiga skanerlash haqida xabar berish mumkin
             });
 
-            joystick.on('end', function () {
-                // Joystik qo'yib yuborilganda
+            hitTestEntity.addEventListener('ar-hit-test-achieved', (data) => {
+                console.log('Surface found');
+                // Yerni topgach, modelni shu yerga qo'yish mumkin (agar kerak bo'lsa)
+                // Bu yerda odatda foydalanuvchi ekranga bosishini kutish kerak
             });
-        }
 
-        // AR rejimiga kirganda/chiqqanda joystikni boshqarish
-        modelViewer.addEventListener('ar-status', (event) => {
-            if (event.detail.status === 'session-started') {
-                console.log('AR session started');
-                if (joystick) joystick.destroy(); // ARda joystikni yashirish/o'chirish
-                joystickContainer.style.display = 'none';
-            } else if (event.detail.status === 'not-presenting') {
-                console.log('AR session ended or not started');
-                joystickContainer.style.display = 'block';
-                if (!joystick && modelViewer.loaded) { // Faqat model yuklangan bo'lsa qayta yaratamiz
-                     // createJoystick(); // Agar ar dan chiqqanda qayta paydo bo'lishini xohlasangiz
+            sceneEl.addEventListener('click', (event) => {
+                if (sceneEl.is('ar-mode') && hitTestEntity && hitTestEntity.components['ar-hit-test'].hasFoundAPose) {
+                    const hitPosition = hitTestEntity.getAttribute('position');
+                    const hitRotation = hitTestEntity.getAttribute('rotation'); // Yoki quaternion
+
+                    mainModel.setAttribute('position', hitPosition);
+                    // mainModel.setAttribute('rotation', hitRotation); // Agar kerak bo'lsa
+                    mainModel.setAttribute('visible', 'true');
+                    console.log('Model placed at:', hitPosition);
+                    
+                    // Bir marta joylashtirgandan keyin hit-testni o'chirish mumkin
+                    // hitTestEntity.removeAttribute('ar-hit-test');
+                    // hitTestEntity.setAttribute('visible', 'false');
                 }
-            }
-        });
-        
-        // Dastlab joystikni yashirib turish, agar AR birinchi bo'lib ishga tushsa
-        if (modelViewer.arActive) {
-            joystickContainer.style.display = 'none';
+            });
         }
-
+        */
     </script>
 </body>
 </html>
