@@ -2,129 +2,256 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Mening AR Dunyom (untitled2)</title>
-    <meta name="description" content="A-Frame yordamida AR sahnasi - untitled2.glb">
-    <!-- A-Frame kutubxonasini import qilish -->
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <title>AR Bino Turi (Soddalashtirilgan)</title>
+    <meta name="description" content="A-Frame AR - untitled2.glb">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <script src="aframe-v1.5.0.min.js"></script> <!-- Lokal A-Frame -->
+
+    <style>
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        a-scene { height: 100vh; width: 100vw; }
+
+        .ui-controls {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-around; /* Tugmalarni yoyish */
+            align-items: center;
+            z-index: 10;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+        .ui-controls div {
+            display: flex;
+            gap: 8px; /* Tugmalar orasidagi masofa */
+        }
+        .ui-controls button {
+            padding: 12px 15px;
+            font-size: 16px;
+            background-color: rgba(0,0,0,0.65);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            min-width: 50px; /* Tugma minimal kengligi */
+            text-align: center;
+        }
+        .ui-controls button:active { /* Bosilganda effekt */
+            background-color: rgba(0,0,0,0.85);
+        }
+
+        #ar-status-message-div {
+            position: fixed;
+            top: 15px; /* Yuqoriga olindi */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+            visibility: hidden;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+    </style>
 </head>
 <body>
     <a-scene
         webxr="optionalFeatures: dom-overlay, hit-test;"
-        ar-mode-ui="enabled: true; overlayElement: #ar-overlay;" <!-- AR tugmasini va overlayni ko'rsatadi -->
+        ar-mode-ui="enabled: true; overlayElement: #ar-status-message-div;"
         renderer="colorManagement: true; physicallyCorrectLights: true;"
-        background="color: #ECECEC"
+        background="color: #E0E0E0"
         id="myScene">
 
-        <a-assets timeout="30000"> <!-- Resurslar yuklanishi uchun vaqtni oshirish (30 soniya) -->
-            <!-- Sizning GLB faylingiz -->
-            <a-asset-item id="myBuildingModel" src="untitled2.glb"></a-asset-item>
-            
-            <!-- (Ixtiyoriy) Atrof-muhit uchun HDRI (agar kerak bo'lsa) -->
-            <!-- <img id="sky" src="your-sky-texture.hdr"> -->
+        <a-assets timeout="60000">
+            <a-asset-item id="building" src="untitled2.glb"></a-asset-item>
         </a-assets>
 
-        <!-- Foydalanuvchi kamerasi -->
-        <a-camera position="0 1.6 0" look-controls="magicWindowEnabled: false"></a-camera>
+        <!-- Kamera Rig (O'yinchi) -->
+        <a-entity id="player-rig" position="0 0.5 2" <!-- Dastlabki pozitsiya, modelga qarab sozlang -->
+                  wasd-controls="acceleration: 25; fly: true; enabled: true;" <!-- PCda yurish va balandlik (Shift/Space bilan) -->
+                  look-controls="pointerLockEnabled: true; magicWindowTrackingEnabled: false; touchEnabled: true; mouseEnabled: true;">
+            <a-entity id="camera" camera="active: true" position="0 1.6 0">
+                <!-- <a-cursor color="white" fuse="false" visible="false"></a-cursor> -->
+            </a-entity>
+        </a-entity>
 
         <!-- Sizning GLB modelingiz -->
-        <!-- position va scale ni modelingizga moslab o'zgartiring -->
-        <!-- Agar modelingiz katta bino bo'lsa, scale ni kichikroq qiling (masalan, 0.1 yoki 0.05) -->
-        <!-- Agar u kichik ob'ekt bo'lsa, scale 1 atrofida bo'lishi mumkin -->
         <a-gltf-model
-            src="#myBuildingModel"
-            id="main-model"
-            position="0 0 -2.5"  <!-- Dastlab kameradan 2.5 metr oldinda, yer sathida -->
-            scale="0.5 0.5 0.5"    <!-- Boshlang'ich masshtab, o'zgartirishingiz mumkin -->
-            animation-mixer       <!-- Agar GLB ichida animatsiyalar bo'lsa -->
+            src="#building"
+            id="mainBuildingModel"
+            position="0 0 0"   <!-- Modelning o'z markaziga nisbatan joylashuvi -->
+            scale="0.5 0.5 0.5"     <!-- Boshlang'ich masshtab, o'zgartiring -->
+            animation-mixer
             visible="true">
         </a-gltf-model>
 
-        <!-- Atrof-muhit yorug'ligi -->
-        <a-light type="ambient" color="#FFFFFF" intensity="0.8"></a-light>
-        <!-- Yo'naltirilgan yorug'lik (quyosh kabi) -->
-        <a-light type="directional" color="#FFFFFF" intensity="0.6" position="-1 3 2"></a-light>
+        <!-- Oddiy yer (ixtiyoriy, agar modelingizda yer bo'lmasa) -->
+        <a-plane id="ground" position="0 -0.05 0" rotation="-90 0 0" width="100" height="100"
+                 color="#BDBDBD" visible="true"></a-plane>
 
-        <!-- (Ixtiyoriy) Agar modelingiz yerga tekis turishi kerak bo'lsa va ARda yerni aniqlashni xohlasangiz -->
-        <!-- Bu qismni hozircha kommentga olib turamiz, chunki u qo'shimcha sozlash talab qilishi mumkin -->
-        <!-- 
-        <a-entity
-            ar-hit-test="target:#main-model; type:plane; enabled:true"
-            visible="false">
-        </a-entity>
-        <a-plane
-            id="groundPlane"
-            height="100" width="100"
-            rotation="-90 0 0"
-            material="shader:shadow; transparent:true; opacity:0.4"
-            shadow
-            visible="false">
-        </a-plane>
-        -->
+        <!-- Yorug'liklar -->
+        <a-light type="ambient" color="#FFF" intensity="0.8"></a-light>
+        <a-light type="directional" color="#FFF" intensity="0.7" position="-1 2.5 1"></a-light>
 
     </a-scene>
 
-    <!-- AR UI uchun DOM Overlay (Masalan, ko'rsatmalar yoki tugmalar uchun) -->
-    <div id="ar-overlay" style="position: fixed; bottom: 20px; width: 100%; text-align: center; z-index: 1; visibility: hidden;">
-        <p style="background-color: rgba(0,0,0,0.5); color: white; padding: 10px; border-radius: 5px; display: inline-block;">
-            AR rejimida atrofni skanerlang va kerakli joyga bosing (agar hit-test yoqilgan bo'lsa) yoki ob'ekt avtomatik paydo bo'ladi.
-        </p>
+    <!-- UI Tugmalari -->
+    <div class="ui-controls">
+        <div>
+            <button id="heightUp">▲ Baland</button>
+            <button id="heightDown">▼ Past</button>
+        </div>
+        <div>
+            <button id="scaleUp">➕ Kattalas</button>
+            <button id="scaleDown">➖ Kichrayt</button>
+        </div>
+    </div>
+
+    <div id="ar-status-message-div">
+        <span id="ar-status-message">AR rejimiga tayyor.</span>
     </div>
 
     <script>
-        const sceneEl = document.querySelector('a-scene');
-        const arOverlay = document.getElementById('ar-overlay');
-        // const modelEl = document.getElementById('main-model'); // Agar model bilan ishlash kerak bo'lsa
+        const sceneEl = document.getElementById('myScene');
+        const playerRigEl = document.getElementById('player-rig'); // Kamera turgan rig
+        const cameraEl = document.getElementById('camera');
+        const modelEl = document.getElementById('mainBuildingModel');
+        
+        const heightUpBtn = document.getElementById('heightUp');
+        const heightDownBtn = document.getElementById('heightDown');
+        const scaleUpBtn = document.getElementById('scaleUp');
+        const scaleDownBtn = document.getElementById('scaleDown');
+        const arStatusMessageDiv = document.getElementById('ar-status-message-div');
+        const arStatusMessage = document.getElementById('ar-status-message');
 
+        const PLAYER_HEIGHT_ADJUST_SPEED = 0.15;
+        const MODEL_SCALE_ADJUST_SPEED = 0.05;
+        const MIN_MODEL_SCALE = 0.01;
+        const MIN_PLAYER_HEIGHT = -5; // Minus darajalarni ko'rish uchun pastroqqa tushishga ruxsat
+
+        // Sahna yuklanishini tekshirish
+        sceneEl.addEventListener('loaded', function () {
+            console.log('A-Frame sahnasi yuklandi!');
+            if (arStatusMessage) arStatusMessage.textContent = "Sahna yuklandi. ARga tayyor.";
+
+            modelEl.addEventListener('model-loaded', function () {
+                console.log('GLB model (untitled2.glb) yuklandi!');
+                if (arStatusMessage && !sceneEl.is('ar-mode')) {
+                    arStatusMessage.textContent = "Model yuklandi. ARga tayyor.";
+                }
+            });
+            modelEl.addEventListener('model-error', function (event) {
+                console.error('GLB model (untitled2.glb) yuklashda xatolik:', event.detail.src);
+                if (arStatusMessageDiv) arStatusMessageDiv.style.visibility = 'visible';
+                if (arStatusMessage) arStatusMessage.textContent = "XATOLIK: Model fayli yuklanmadi!";
+            });
+        });
+
+        // AR rejimi hodisalari
         sceneEl.addEventListener('enter-vr', function () {
             if (sceneEl.is('ar-mode')) {
                 console.log("AR rejimiga kirildi!");
-                arOverlay.style.visibility = 'visible'; // ARga kirganda overlayni ko'rsatish
-                // Bu yerda AR rejimi uchun maxsus logikani qo'shishingiz mumkin
+                if (arStatusMessageDiv) arStatusMessageDiv.style.visibility = 'visible';
+                if (arStatusMessage) arStatusMessage.textContent = "AR Rejimida. Atrofni skanerlang.";
+                
+                // ARda virtual harakatni (WASD) o'chiramiz, faqat jismoniy harakat
+                playerRigEl.removeAttribute('wasd-controls');
+                // ARda modelning pozitsiyasi va masshtabi odatda o'zgarmas bo'lishi kerak
+                // Lekin agar xohlasangiz, bu tugmalarni ARda ham ishlaydigan qilib qoldirishingiz mumkin
+                // document.querySelector('.ui-controls').style.display = 'none'; // Agar ARda UI kerak bo'lmasa
             }
         });
 
         sceneEl.addEventListener('exit-vr', function () {
             console.log("AR rejimidan chiqildi!");
-            arOverlay.style.visibility = 'hidden'; // ARdan chiqqanda overlayni yashirish
+            if (arStatusMessageDiv) arStatusMessageDiv.style.visibility = 'hidden';
+            
+            // 3D rejim uchun WASD nazoratini qayta yoqamiz
+            playerRigEl.setAttribute('wasd-controls', 'acceleration: 25; fly: true; enabled: true;');
+            // document.querySelector('.ui-controls').style.display = 'flex'; // UI ni qayta ko'rsatish
         });
 
-        // Agar siz hit-test orqali ob'ektni yerga qo'ymoqchi bo'lsangiz,
-        // quyidagi kabi kod kerak bo'ladi:
-        /*
-        const mainModel = document.getElementById('main-model');
-        let hitTestEntity = document.querySelector('[ar-hit-test]');
-
-        if (hitTestEntity) {
-            mainModel.setAttribute('visible', 'false'); // Dastlab modelni yashirish
-
-            hitTestEntity.addEventListener('ar-hit-test-start', (data) => {
-                console.log('Scanning for surfaces...');
-                // Foydalanuvchiga skanerlash haqida xabar berish mumkin
-            });
-
-            hitTestEntity.addEventListener('ar-hit-test-achieved', (data) => {
-                console.log('Surface found');
-                // Yerni topgach, modelni shu yerga qo'yish mumkin (agar kerak bo'lsa)
-                // Bu yerda odatda foydalanuvchi ekranga bosishini kutish kerak
-            });
-
-            sceneEl.addEventListener('click', (event) => {
-                if (sceneEl.is('ar-mode') && hitTestEntity && hitTestEntity.components['ar-hit-test'].hasFoundAPose) {
-                    const hitPosition = hitTestEntity.getAttribute('position');
-                    const hitRotation = hitTestEntity.getAttribute('rotation'); // Yoki quaternion
-
-                    mainModel.setAttribute('position', hitPosition);
-                    // mainModel.setAttribute('rotation', hitRotation); // Agar kerak bo'lsa
-                    mainModel.setAttribute('visible', 'true');
-                    console.log('Model placed at:', hitPosition);
-                    
-                    // Bir marta joylashtirgandan keyin hit-testni o'chirish mumkin
-                    // hitTestEntity.removeAttribute('ar-hit-test');
-                    // hitTestEntity.setAttribute('visible', 'false');
-                }
-            });
+        // Balandlikni sozlash (Player Rig ning Y pozitsiyasini o'zgartiradi)
+        function adjustPlayerHeight(amount) {
+            const currentPosition = playerRigEl.getAttribute('position');
+            let newY = currentPosition.y + amount;
+            if (newY < MIN_PLAYER_HEIGHT) newY = MIN_PLAYER_HEIGHT; // Minimal balandlik cheklovi
+            playerRigEl.setAttribute('position', { x: currentPosition.x, y: newY, z: currentPosition.z });
         }
-        */
+
+        heightUpBtn.addEventListener('click', () => adjustPlayerHeight(PLAYER_HEIGHT_ADJUST_SPEED));
+        heightDownBtn.addEventListener('click', () => adjustPlayerHeight(-PLAYER_HEIGHT_ADJUST_SPEED));
+
+        // Model masshtabini sozlash
+        function adjustModelScale(amount) {
+            const currentScale = modelEl.getAttribute('scale');
+            let newScaleVal = currentScale.x + amount;
+            if (newScaleVal < MIN_MODEL_SCALE) newScaleVal = MIN_MODEL_SCALE; // Minimal masshtab
+            modelEl.setAttribute('scale', { x: newScaleVal, y: newScaleVal, z: newScaleVal });
+        }
+
+        scaleUpBtn.addEventListener('click', () => adjustModelScale(MODEL_SCALE_ADJUST_SPEED));
+        scaleDownBtn.addEventListener('click', () => adjustModelScale(-MODEL_SCALE_ADJUST_SPEED));
+
+        // Mobil uchun sensorli harakat (oddiy pan/drag)
+        // Bu qismni yanada takomillashtirish mumkin. Hozircha `look-controls` aylanishni ta'minlaydi.
+        // "Drag-to-move" uchun maxsus A-Frame komponenti yoki qo'shimcha JavaScript logikasi kerak bo'ladi.
+        // Hozircha mobil harakat asosan AR rejimida jismoniy yurish orqali bo'ladi.
+        // 3D rejimida mobil qurilmalar uchun `look-controls` orqali aylanish va zoom (agar yoqilgan bo'lsa) ishlaydi.
+        // WASD o'rniga mobil uchun "pan" qilish uchun quyidagi kabi oddiy narsani sinab ko'rish mumkin:
+        
+        let isDragging = false;
+        let previousTouchX, previousTouchY;
+
+        function onTouchStart(event) {
+            if (sceneEl.is('ar-mode') || event.touches.length > 1) return;
+            isDragging = true;
+            previousTouchX = event.touches[0].clientX;
+            previousTouchY = event.touches[0].clientY;
+            // `look-controls` ni vaqtincha o'chirish mumkin, agar ziddiyat bo'lsa
+            // playerRigEl.components['look-controls'].pause();
+        }
+
+        function onTouchMove(event) {
+            if (!isDragging || sceneEl.is('ar-mode') || event.touches.length > 1) return;
+
+            const touchX = event.touches[0].clientX;
+            const touchY = event.touches[0].clientY;
+
+            const deltaX = (previousTouchX - touchX) * 0.01; // Tezlikni sozlang
+            const deltaY = (previousTouchY - touchY) * 0.01; // Bu vertikal harakat uchun
+
+            const playerObject = playerRigEl.object3D;
+            const moveVector = new THREE.Vector3(deltaX, 0, deltaY); // Oldinga/orqaga va chapga/o'ngga
+            
+            // Harakat vektorini kameraning aylanishiga moslashtirish
+            const cameraRotationY = cameraEl.object3D.rotation.y; // Faqat Y o'qi atrofida aylanish
+            moveVector.applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraRotationY);
+
+            playerObject.position.add(moveVector);
+
+            previousTouchX = touchX;
+            previousTouchY = touchY;
+        }
+
+        function onTouchEnd(event) {
+            isDragging = false;
+            // playerRigEl.components['look-controls'].play();
+        }
+
+        // Faqat mobil qurilmalarda sensorli harakatni qo'shish
+        // Bu oddiy "pan" uchun, haqiqiy yurish uchun ancha murakkab bo'ladi
+        // if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        //    sceneEl.canvas.addEventListener('touchstart', onTouchStart, {passive: false});
+        //    sceneEl.canvas.addEventListener('touchmove', onTouchMove, {passive: false});
+        //    sceneEl.canvas.addEventListener('touchend', onTouchEnd, {passive: false});
+        // }
+        // Hozircha mobil uchun asosiy harakatni `look-controls` orqali aylanish va ARda jismoniy harakatga qoldiramiz.
+        // `wasd-controls` mobil uchun ham qisman sensorli harakatni (masalan, bir barmoq bilan surish) ta'minlashi mumkin,
+        // lekin u PC uchun optimallashtirilgan.
+
     </script>
 </body>
 </html>
