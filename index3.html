@@ -2,15 +2,91 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Minimal AR Test</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.5.0/aframe.min.js"></script>
+    <title>AR Loyiha (Lokal A-Frame)</title>
+    <meta name="description" content="A-Frame AR - untitled2.glb - Lokal A-Frame bilan">
+    <!-- A-Frame kutubxonasini lokal fayldan import qilish -->
+    <script src="aframe-v1.5.0.min.js"></script>
 </head>
 <body>
-    <a-scene ar-mode-ui="enabled: true">
-        <a-box position="0 1 -2" rotation="0 45 0" color="#4CC3D9"></a-box>
-        <a-camera position="0 1.6 0"></a-camera>
-        <a-light type="ambient" color="#888"></a-light>
-        <a-light type="directional" intensity="0.5" position="-1 1 1"></a-light>
+    <a-scene
+        webxr="optionalFeatures: dom-overlay;"
+        ar-mode-ui="enabled: true; overlayElement: #ar-info-overlay;"
+        renderer="colorManagement: true; physicallyCorrectLights: true;"
+        background="color: #FAFAFA"
+        id="myARSceneElement">
+
+        <a-assets timeout="60000"> <!-- Resurslar uchun kutish vaqtini 60 soniyaga oshirdik -->
+            <a-asset-item id="mainModelAsset" src="untitled2.glb"></a-asset-item>
+        </a-assets>
+
+        <!-- Foydalanuvchi kamerasi -->
+        <a-camera position="0 1.6 0" look-controls="magicWindowEnabled: false"></a-camera>
+
+        <!-- Sizning GLB modelingiz -->
+        <a-gltf-model
+            src="#mainModelAsset"
+            id="my3DModel"
+            position="0 0.2 -2.5"   <!-- Modelni yerga yaqinroq va oldinroq -->
+            scale="0.3 0.3 0.3"     <!-- Boshlang'ich masshtab, kerak bo'lsa o'zgartiring -->
+            animation-mixer
+            visible="true">
+        </a-gltf-model>
+
+        <!-- Yorug'liklar -->
+        <a-light type="ambient" color="#FFFFFF" intensity="0.8"></a-light>
+        <a-light type="directional" color="#FFFFFF" intensity="0.6" position="-1 3 1.5"></a-light>
+
     </a-scene>
+
+    <!-- AR holati uchun DOM Overlay -->
+    <div id="ar-info-overlay" style="position: fixed; bottom: 15px; width: 100%; text-align: center; z-index: 1; visibility: hidden;">
+        <p style="background-color: rgba(0,0,0,0.65); color: white; padding: 10px 15px; border-radius: 8px; display: inline-block; font-family: Arial, sans-serif; font-size: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+            <span id="ar-status-message">AR rejimiga o'tish uchun tayyor.</span>
+        </p>
+    </div>
+
+    <script>
+        const scene = document.getElementById('myARSceneElement');
+        const arInfoOverlay = document.getElementById('ar-info-overlay');
+        const arStatusMessage = document.getElementById('ar-status-message');
+        const model3D = document.getElementById('my3DModel');
+
+        if (scene) {
+            scene.addEventListener('loaded', function () {
+                console.log('A-Frame sahnasi muvaffaqiyatli yuklandi!');
+                if (arStatusMessage) arStatusMessage.textContent = "Sahna yuklandi. ARga kirishga tayyor.";
+            });
+
+            scene.addEventListener('enter-vr', function () {
+                if (scene.is('ar-mode')) {
+                    console.log("AR rejimiga kirildi!");
+                    if (arInfoOverlay) arInfoOverlay.style.visibility = 'visible';
+                    if (arStatusMessage) arStatusMessage.textContent = "AR Rejimida. Atrofni skanerlang.";
+                }
+            });
+
+            scene.addEventListener('exit-vr', function () {
+                console.log("AR rejimidan chiqildi!");
+                if (arInfoOverlay) arInfoOverlay.style.visibility = 'hidden';
+            });
+
+            if (model3D) {
+                model3D.addEventListener('model-loaded', function () {
+                    console.log('GLB model (untitled2.glb) muvaffaqiyatli yuklandi!');
+                    if (arStatusMessage && !scene.is('ar-mode')) { // Agar hali ARda bo'lmasa
+                         arStatusMessage.textContent = "Model yuklandi. ARga kirishga tayyor.";
+                    }
+                });
+                model3D.addEventListener('model-error', function (event) {
+                    console.error('XATOLIK: GLB model (untitled2.glb) yuklanmadi!', event.detail.src);
+                    if (arInfoOverlay) arInfoOverlay.style.visibility = 'visible';
+                    if (arStatusMessage) arStatusMessage.textContent = "XATOLIK: Model fayli yuklanmadi. Yo'lni tekshiring!";
+                });
+            }
+        } else {
+            console.error("XATOLIK: A-Frame sahnasi (<a-scene>) topilmadi!");
+            alert("Xatolik: Sahna elementi topilmadi. HTML kodini tekshiring.");
+        }
+    </script>
 </body>
 </html>
