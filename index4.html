@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>To'g'ridan-to'g'ri AR (Mobil)</title>
+    <meta name="description" content="A-Frame - untitled2.glb - Avtomatik AR">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <script src="aframe-v1.5.0.min.js"></script> <!-- Lokal A-Frame -->
+    <!-- nipplejs endi kerak emas, chunki ARda virtual joystik ishlatmaymiz -->
+
+    <style>
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        a-scene { height: 100vh; width: 100vw; }
+
+        /* UI tugmalari (masshtab, balandlik) AR rejimida ham ko'rinadi */
+        .ar-ui-controls {
+            position: fixed;
+            bottom: 30px; /* Balandroq joylashuv */
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 10;
+            padding: 0 10px;
+            box-sizing: border-box;
+            pointer-events: auto; /* Doim interaktiv */
+        }
+        .ar-ui-controls div { display: flex; gap: 10px; }
+        .ar-ui-controls button {
+            padding: 12px 15px; font-size: 16px; background-color: rgba(0,0,0,0.7);
+            color: white; border: none; border-radius: 8px; cursor: pointer;
+            min-width: 50px; text-align: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .ar-ui-controls button:active { background-color: rgba(0,0,0,0.9); }
+
+        /* Foydalanuvchiga ko'rsatma berish uchun overlay */
+        #ar-init-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.8); color: white;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; font-size: 18px; z-index: 100;
+            visibility: hidden; /* Dastlab yashirilgan */
+        }
+        #ar-init-overlay p { margin-bottom: 20px; }
+        #ar-init-button { /* ARga kirish uchun tugma (agar avtomatik ishlamasa) */
+            padding: 15px 30px; font-size: 20px; background-color: #4CAF50;
+            color: white; border: none; border-radius: 5px; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- `ar-mode-ui="enabled: false"` - standart AR tugmasini yashiramiz -->
+    <a-scene
+        webxr="optionalFeatures: dom-overlay, hit-test;"
+        ar-mode-ui="enabled: false" <!-- Standart AR tugmasini yashiramiz -->
+        renderer="colorManagement: true; physicallyCorrectLights: true;"
+        background="color: #ECECEC" <!-- ARga kirmaguncha ko'rinadigan fon -->
+        id="myARSceneOnly"
+        vr-mode-ui="enabled: false">
+
+        <a-assets timeout="60000">
+            <a-asset-item id="myModelAsset" src="untitled2.glb"></a-asset-item>
+        </a-assets>
+
+        <!-- Kamera. ARda bu qurilma kamerasi bilan almashtiriladi. -->
+        <!-- Pozitsiyasi ARda unchalik muhim emas, chunki u dunyoga bog'lanadi. -->
+        <a-camera id="arCamera" position="0 1.6 0.5" look-controls="enabled: false" wasd-controls="enabled: false"></a-camera>
+
+        <!-- Sizning GLB modelingiz -->
+        <!-- ARda model odatda kameradan bir oz oldinda va yer sathida paydo bo'ladi -->
+        <!-- Yoki hit-test bilan yuzaga joylashtiriladi -->
+        <a-gltf-model
+            src="#myModelAsset"
+            id="arBuildingModel"
+            position="0 0 -3"  <!-- Boshlang'ich pozitsiya, ARga kirganda o'zgarishi mumkin -->
+            scale="0.4 0.4 0.4"   <!-- Boshlang'ich masshtab -->
+            animation-mixer
+            visible="false"> <!-- Dastlab yashirilgan, ARda paydo bo'ladi -->
+        </a-gltf-model>
+
+        <!-- ARda yorug'lik muhim -->
+        <a-light type="ambient" color="#FFF" intensity="0.9"></a-light>
+        <a-light type="directional" color="#FFF" intensity="0.7" position="1 3 2"></a-light>
+
+        <!-- (Ixtiyoriy) Agar hit-test bilan yuzaga joylashtirmoqchi bo'lsangiz -->
+        <a-entity id="reticle"
+                  visible="false"
+                  geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.015"
+                  material="color: white; shader: flat; transparent: true; opacity: 0.8"
+                  ar-hit-test="target:#arBuildingModel; type: feature-point; offset: 0 0 0;"> 
+                  <!-- type: plane; yoki feature-point; -->
+        </a-entity>
+
+    </a-scene>
+
+    <!-- AR uchun UI tugmalari -->
+    <div class="ar-ui-controls" style="visibility: hidden;"> <!-- Dastlab yashirilgan -->
+        <div>
+            <button id="btnHeightAR">▲</button> <!-- Oddiyroq ikonka yoki matn -->
+            <button id="btnHeightARDown">▼</button>
+        </div>
+        <div>
+            <button id="btnScaleARUp">➕</button>
+            <button id="btnScaleARDown">➖</button>
+        </div>
+    </div>
+
+    <!-- ARga kirish uchun overlay (agar avtomatik ishlamasa yoki ruxsat kerak bo'lsa) -->
+    <div id="ar-init-overlay">
+        <p>AR tajribasini boshlash uchun tayyor.</p>
+        <button id="ar-init-button">ARni Boshlash</button>
+        <p style="font-size: 14px; margin-top: 20px;">(Agar qurilmangiz qo'llab-quvvatlasa, avtomatik boshlanadi)</p>
+    </div>
+
+    <script>
+        const sceneEl = document.getElementById('myARSceneOnly');
+        const modelEl = document.getElementById('arBuildingModel');
+        const arCameraEl = document.getElementById('arCamera');
+        const arInitOverlayEl = document.getElementById('ar-init-overlay');
+        const arInitButtonEl = document.getElementById('ar-init-button');
+        const arUiControlsEl = document.querySelector('.ar-ui-controls');
+        const reticleEl = document.getElementById('reticle'); // Hit-test uchun
+
+        const MODEL_SCALE_STEP_AR = 0.05;
+        const MODEL_Y_POS_STEP_AR = 0.1; // ARda modelning Y pozitsiyasini o'zgartiramiz
+        const MIN_MODEL_SCALE_AR = 0.01;
+
+        let arSessionActive = false;
+        let modelPlaced = false; // Model yuzaga joylashtirilganmi?
+
+        function isMobile() { return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent); }
+
+        // AR seansini boshlashga urinish
+        async function tryEnterAR() {
+            if (sceneEl.is('ar-mode')) return; // Agar allaqachon ARda bo'lsa
+
+            try {
+                // `xrOptionalFeatures` WebXR API uchun muhim
+                const session = await navigator.xr.requestSession('immersive-ar', {
+                    requiredFeatures: ['local-floor', 'hit-test'], // Yoki 'local', 'viewer'
+                    optionalFeatures: ['dom-overlay'],
+                    domOverlay: { root: document.body }
+                });
+                await sceneEl.xrSessionRunner.setSession(session);
+                console.log("AR seansi muvaffaqiyatli so'raldi.");
+                arInitOverlayEl.style.visibility = 'hidden';
+            } catch (e) {
+                console.error("AR seansini avtomatik boshlashda xatolik:", e);
+                // Agar avtomatik ishlamasa, foydalanuvchiga tugmani ko'rsatamiz
+                arInitOverlayEl.style.visibility = 'visible';
+                arInitButtonEl.style.display = 'block';
+                arInitOverlayEl.querySelector('p').textContent = "ARni boshlash uchun tugmani bosing.";
+            }
+        }
+
+        sceneEl.addEventListener('loaded', async function () {
+            console.log('A-Frame sahna yuklandi.');
+            arUiControlsEl.style.visibility = 'hidden'; // Dastlab UI ni yashirish
+
+            if (!isMobile()) {
+                arInitOverlayEl.style.visibility = 'visible';
+                arInitOverlayEl.querySelector('p').textContent = "Bu tajriba mobil qurilmalar uchun mo'ljallangan.";
+                arInitButtonEl.style.display = 'none';
+                return;
+            }
+
+            // ARCore/WebXR mavjudligini tekshirish
+            if (navigator.xr && await navigator.xr.isSessionSupported('immersive-ar')) {
+                console.log("Immersive AR qo'llab-quvvatlanadi.");
+                arInitOverlayEl.style.visibility = 'visible'; // Foydalanuvchiga ko'rsatma
+                
+                // Ba'zi brauzerlar foydalanuvchi o'zaro ta'sirisiz session.request ni bloklaydi.
+                // Shuning uchun avval tugmani ko'rsatamiz.
+                arInitButtonEl.addEventListener('click', tryEnterAR);
+
+                // Agar avtomatik urinishni xohlasangiz (har doim ham ishlamaydi):
+                // setTimeout(tryEnterAR, 1000); // Kichik kechikish bilan urinish
+            } else {
+                console.warn("Immersive AR qo'llab-quvvatlanmaydi.");
+                arInitOverlayEl.style.visibility = 'visible';
+                arInitOverlayEl.querySelector('p').textContent = "Afsuski, qurilmangiz ARni qo'llab-quvvatlamaydi.";
+                arInitButtonEl.style.display = 'none';
+            }
+
+            modelEl.addEventListener('model-loaded', () => console.log('GLB model yuklandi.'));
+            modelEl.addEventListener('model-error', (e) => console.error('GLB model xatolik:', e.detail.src));
+        });
+
+        sceneEl.addEventListener('enter-vr', function () {
+            if (sceneEl.is('ar-mode')) {
+                arSessionActive = true;
+                console.log("AR rejimiga kirildi!");
+                arInitOverlayEl.style.visibility = 'hidden';
+                arUiControlsEl.style.visibility = 'visible'; // ARda UI ni ko'rsatish
+                modelEl.setAttribute('visible', 'false'); // Dastlab modelni yashirish (hit-test uchun)
+                reticleEl.setAttribute('visible', 'true'); // Reticle ni ko'rsatish
+                modelPlaced = false;
+            }
+        });
+
+        sceneEl.addEventListener('exit-vr', function () {
+            arSessionActive = false;
+            console.log("AR rejimidan chiqildi!");
+            arUiControlsEl.style.visibility = 'hidden';
+            modelEl.setAttribute('visible', 'false');
+            reticleEl.setAttribute('visible', 'false');
+            arInitOverlayEl.style.visibility = 'visible'; // Qayta kirish uchun overlayni ko'rsatish
+            arInitButtonEl.style.display = 'block';
+            arInitOverlayEl.querySelector('p').textContent = "ARni boshlash uchun tugmani bosing.";
+        });
+
+        // Hit-test orqali modelni joylashtirish
+        sceneEl.addEventListener('click', function() {
+            if (arSessionActive && !modelPlaced && reticleEl.getAttribute('visible')) {
+                const hitPosition = reticleEl.getAttribute('position');
+                const hitRotation = reticleEl.getAttribute('rotation'); // Yoki quaternion
+
+                if (hitPosition) {
+                    modelEl.setAttribute('position', hitPosition);
+                    // modelEl.setAttribute('rotation', hitRotation); // Agar kerak bo'lsa
+                    modelEl.setAttribute('visible', 'true');
+                    reticleEl.setAttribute('visible', 'false'); // Reticle ni yashirish
+                    modelPlaced = true;
+                    console.log('Model ARda yuzaga joylashtirildi:', hitPosition);
+                }
+            }
+        });
+
+
+        // AR UI Tugmalari (Modelning pozitsiyasi va masshtabini o'zgartiradi)
+        document.getElementById('btnHeightAR').addEventListener('click', () => {
+            if (!arSessionActive || !modelPlaced) return;
+            const currentPos = modelEl.getAttribute('position');
+            modelEl.setAttribute('position', { x: currentPos.x, y: currentPos.y + MODEL_Y_POS_STEP_AR, z: currentPos.z });
+        });
+        document.getElementById('btnHeightARDown').addEventListener('click', () => {
+            if (!arSessionActive || !modelPlaced) return;
+            const currentPos = modelEl.getAttribute('position');
+            modelEl.setAttribute('position', { x: currentPos.x, y: currentPos.y - MODEL_Y_POS_STEP_AR, z: currentPos.z });
+        });
+        document.getElementById('btnScaleARUp').addEventListener('click', () => {
+            if (!arSessionActive || !modelPlaced) return;
+            const s = modelEl.object3D.scale;
+            modelEl.object3D.scale.set(s.x + MODEL_SCALE_STEP_AR, s.y + MODEL_SCALE_STEP_AR, s.z + MODEL_SCALE_STEP_AR);
+        });
+        document.getElementById('btnScaleARDown').addEventListener('click', () => {
+            if (!arSessionActive || !modelPlaced) return;
+            const s = modelEl.object3D.scale;
+            let newS = Math.max(MIN_MODEL_SCALE_AR, s.x - MODEL_SCALE_STEP_AR);
+            modelEl.object3D.scale.set(newS, newS, newS);
+        });
+
+    </script>
+</body>
+</html>
