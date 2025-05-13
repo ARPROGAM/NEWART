@@ -2,124 +2,184 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"> <!-- user-scalable=no muhim -->
     <title>Mening AR Bino Turim</title>
-    <!-- <model-viewer> komponentini import qilish -->
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+    <!-- NippleJS kutubxonasini qo'shish -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
-
-        body {
-            font-family: 'Roboto', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f2f5; /* Orqa fon uchun yoqimli rang */
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            text-align: center;
-            box-sizing: border-box;
-        }
-
-        .container {
-            background-color: #ffffff;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 800px; /* Model viewer uchun maksimal kenglik */
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            color: #1a73e8; /* Google uslubidagi ko'k rang */
-            margin-bottom: 15px;
-        }
-
-        p {
-            font-size: 1.1em;
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
+        /* ... (oldingi stillaringiz) ... */
 
         model-viewer {
             width: 100%;
-            height: 500px; /* Modelning balandligi, o'zgartirishingiz mumkin */
-            background-color: #e8e8e8; /* Model orqa foni */
+            height: 500px;
+            background-color: #e8e8e8;
             border-radius: 8px;
             border: 1px solid #ddd;
-        }
-        
-        /* AR tugmasi uchun qo'shimcha stil (ixtiyoriy) */
-        model-viewer::part(ar-button) {
-            background-color: #1a73e8;
-            color: white;
-            border-radius: 20px;
-            padding: 10px 20px;
-            font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            transition: background-color 0.3s ease;
-        }
-        model-viewer::part(ar-button):hover {
-            background-color: #155ab6;
+            position: relative; /* Joystikni joylashtirish uchun */
         }
 
-        .footer {
-            font-size: 0.9em;
-            color: #777;
-            margin-top: 20px;
+        /* Joystik uchun konteyner */
+        #joystick-container {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px; /* Joystik o'lchami */
+            height: 150px;
+            opacity: 0.7;
+            z-index: 10; /* Model-viewer ustida bo'lishi uchun */
         }
 
-        a {
-            color: #1a73e8;
-            text-decoration: none;
+        /* AR Rejimida joystikni yashirish */
+        model-viewer[ar-status="session-started"] ~ #joystick-container {
+            display: none;
         }
-        a:hover {
-            text-decoration: underline;
-        }
-
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Binomni ARda Ko'ring!</h1>
-        <p>Quyidagi 3D modelni aylantirib ko'rishingiz va AR tugmasini bosib, uni o'z atrofingizda jonlantirishingiz mumkin.</p>
+        <p>Quyidagi 3D modelni aylantirib ko'rishingiz va AR tugmasini bosib, uni o'z atrofingizda jonlantirishingiz mumkin. 3D rejimida harakatlanish uchun joystikdan foydalaning (AR rejimida joystik yashiriladi).</p>
 
         <model-viewer 
             id="my-building-model"
-            src="untitled.glb"  <!-- MUHIM: O'Z GLB FAYLINGIZGA YO'LNI KO'RSATING -->
+            src="untitled.glb"
             alt="Mening bino modelim"
             ar
             ar-modes="webxr scene-viewer quick-look"
-            camera-controls
-            environment-image="neutral" <!-- Yoki o'zingizning HDRI rasmingizni qo'ying -->
+            camera-controls <!-- Buni o'chirib qo'yish mumkin, agar faqat joystik bilan boshqarmoqchi bo'lsangiz -->
+            environment-image="neutral"
             shadow-intensity="1.2"
-            auto-rotate
-            autoplay
-            poster="poster.png" <!-- Model yuklanayotganda ko'rinadigan rasm (ixtiyoriy) -->
-            touch-action="pan-y"
+            disable-pan <!-- Joystik bilan ishlaganda pan (siljitish)ni o'chirish foydali bo'lishi mumkin -->
             style="width: 100%; height: 500px;">
-
-            <!-- AR tugmasi uchun slot (agar kerak bo'lsa, o'zgartirishingiz mumkin) -->
-            <button slot="ar-button" id="ar-button" style="display: none;"></button>
             
-            <!-- Yuklanish indikatori -->
+            <button slot="ar-button" id="ar-button" style="display: none;"></button>
             <div class="progress-bar" slot="progress-bar">
                 <div class="update-bar"></div>
             </div>
         </model-viewer>
+
+        <!-- Joystik uchun konteyner -->
+        <div id="joystick-container"></div>
+
         <p>Agar AR tugmasi ko'rinmasa, qurilmangiz yoki brauzeringiz WebAR'ni qo'llab-quvvatlamasligi mumkin.</p>
     </div>
 
     <div class="footer">
-        <p>© 2024 Sizning Ismingiz. Barcha huquqlar himoyalangan. <br>
-           <a href="https://github.com/YOUR_GITHUB_USERNAME" target="_blank">GitHub Profilim</a>
-        </p>
+        <!-- ... (footer qismi) ... -->
     </div>
 
+    <script>
+        const modelViewer = document.getElementById('my-building-model');
+        const joystickContainer = document.getElementById('joystick-container');
+        let joystick = null;
+
+        const movementSpeed = 0.03; // Harakat tezligi (o'zgartirishingiz mumkin)
+        const rotationSpeed = 0.02; // Aylanish tezligi (o'zgartirishingiz mumkin)
+
+        // Model yuklangandan keyin joystikni sozlash
+        modelViewer.addEventListener('load', () => {
+            console.log('Model loaded');
+
+            // Agar AR rejimida bo'lmasak joystikni yaratamiz
+            if (!modelViewer.arActive) {
+                createJoystick();
+            }
+        });
+
+        function createJoystick() {
+            if (joystick) {
+                joystick.destroy(); // Eskisini yo'q qilish
+            }
+            const options = {
+                zone: joystickContainer,
+                mode: 'static', // Yoki 'dynamic' yoki 'semi'
+                position: { left: '50%', top: '50%' },
+                color: 'blue',
+                size: 120
+            };
+            joystick = nipplejs.create(options);
+
+            joystick.on('move', function (evt, data) {
+                if (modelViewer.arActive) return; // AR rejimida harakatlanmaymiz
+
+                const angle = data.angle.radian;
+                const force = data.force > 1 ? 1 : data.force; // Kuchni chegaralash
+
+                // Kamera orbitasini (pozitsiyasini) o'zgartirish
+                // Bu oddiy yondashuv, yanada murakkabroq "first-person" kamera uchun
+                // `cameraTarget` ni ham o'zgartirish va kamerani oldinga/orqaga siljitish kerak bo'ladi.
+                
+                // Oldinga/orqaga harakat (joystik vertikal harakati)
+                // Bu qism ancha murakkab, chunki model-viewer kamerasi orbitada aylanadi.
+                // Oddiy "cameraTarget"ni o'zgartirish bilan birinchi shaxs kamerasi qilish qiyin.
+                // Hozircha faqat model atrofida aylanishni va yaqinlashishni ko'rsatamiz.
+
+                // Model atrofida aylanish (joystik gorizontal harakati)
+                // Bu `cameraOrbit`ni to'g'ridan-to'g'ri o'zgartirish bilan yaxshi ishlamaydi.
+                // Buning o'rniga `camera-controls` ni vaqtincha o'chirib,
+                // kamera orbitasini matematik hisoblashlar bilan boshqarish kerak.
+                // Yoki, `camera-controls` ni yoqiq qoldirib, joystik faqat qo'shimcha
+                // nozik sozlamalar uchun ishlatilishi mumkin.
+
+                // Oddiyroq yondashuv: Joystik bilan modelni aylantirish (bu kamera harakati emas)
+                // modelViewer.style.transform = `rotateY(${angle * (180/Math.PI)}deg)`; // Bu noto'g'ri usul
+
+                // Eng yaxshi yondashuvlardan biri - model-viewerning o'z kamera API'sidan foydalanish.
+                // Ammo "first-person walk" uchun bu API cheklangan.
+                
+                // Agar siz oddiyroq "orbitada aylanish"ni xohlasangiz:
+                let [yaw, pitch, radius] = modelViewer.getCameraOrbit().split(" ").map(Number);
+                
+                // Joystikning gorizontal harakati bilan YAW (gorizontal aylanish)
+                // Bu yerda `data.vector.x` ni ishlatamiz.
+                const deltaYaw = -data.vector.x * rotationSpeed * force * 100; // Koeffitsientni sozlang
+                modelViewer.cameraOrbit = `${yaw + deltaYaw}deg ${pitch}deg ${radius}m`;
+
+                // Joystikning vertikal harakati bilan PITCH (vertikal aylanish) yoki RADIUS (yaqinlashish)
+                // Radius (yaqinlashish/uzoqlashish)
+                const deltaRadius = -data.vector.y * movementSpeed * force;
+                let newRadius = radius + deltaRadius;
+                if (newRadius < 0.5) newRadius = 0.5; // Minimal radius
+                if (newRadius > 10) newRadius = 10;  // Maksimal radius
+                modelViewer.cameraOrbit = `${yaw + deltaRadius}deg ${pitch}deg ${newRadius}m`;
+
+
+                // Birinchi shaxs kamerasi uchun ancha murakkab mantiq kerak:
+                // 1. Kameraning joriy yo'nalishini olish.
+                // 2. Shu yo'nalish bo'yicha `cameraTarget` va kamera pozitsiyasini siljitish.
+                // `modelViewer.getCameraDirection()` yordam berishi mumkin, lekin u faqat yo'nalish vektorini beradi.
+
+                console.log('Joystick move:', data.vector.x, data.vector.y);
+            });
+
+            joystick.on('end', function () {
+                // Joystik qo'yib yuborilganda
+            });
+        }
+
+        // AR rejimiga kirganda/chiqqanda joystikni boshqarish
+        modelViewer.addEventListener('ar-status', (event) => {
+            if (event.detail.status === 'session-started') {
+                console.log('AR session started');
+                if (joystick) joystick.destroy(); // ARda joystikni yashirish/o'chirish
+                joystickContainer.style.display = 'none';
+            } else if (event.detail.status === 'not-presenting') {
+                console.log('AR session ended or not started');
+                joystickContainer.style.display = 'block';
+                if (!joystick && modelViewer.loaded) { // Faqat model yuklangan bo'lsa qayta yaratamiz
+                     // createJoystick(); // Agar ar dan chiqqanda qayta paydo bo'lishini xohlasangiz
+                }
+            }
+        });
+        
+        // Dastlab joystikni yashirib turish, agar AR birinchi bo'lib ishga tushsa
+        if (modelViewer.arActive) {
+            joystickContainer.style.display = 'none';
+        }
+
+    </script>
 </body>
 </html>
