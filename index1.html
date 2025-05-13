@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>AR Test (untitled2) - Yangi CDN</title>
+    <meta name="description" content="A-Frame AR - untitled2.glb">
+    <!-- A-Frame kutubxonasini cdnjs.cloudflare.com dan import qilish -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.5.0/aframe.min.js"></script>
+</head>
+<body>
+    <a-scene
+        webxr="optionalFeatures: dom-overlay;"
+        ar-mode-ui="enabled: true; overlayElement: #ar-status-overlay;"
+        renderer="colorManagement: true; physicallyCorrectLights: true;"
+        background="color: #FAFAFA"
+        id="myARScene">
+
+        <a-assets timeout="45000"> <!-- Resurslar uchun kutish vaqtini oshirdik -->
+            <a-asset-item id="buildingModel" src="untitled2.glb"></a-asset-item>
+        </a-assets>
+
+        <!-- Foydalanuvchi kamerasi -->
+        <a-camera position="0 1.6 0" look-controls="magicWindowEnabled: false"></a-camera>
+
+        <!-- Sizning GLB modelingiz -->
+        <a-gltf-model
+            src="#buildingModel"
+            id="mainARModel"
+            position="0 0.5 -2"   <!-- Modelni biroz yuqoriroq va oldinroq joylashtiramiz -->
+            scale="0.3 0.3 0.3"     <!-- Boshlang'ich masshtab, kerak bo'lsa o'zgartiring -->
+            animation-mixer        <!-- Agar GLBda animatsiyalar bo'lsa -->
+            visible="true">
+        </a-gltf-model>
+
+        <!-- Yorug'liklar -->
+        <a-light type="ambient" color="#FFF" intensity="0.9"></a-light>
+        <a-light type="directional" color="#FFF" intensity="0.7" position="-0.5 2 1"></a-light>
+
+    </a-scene>
+
+    <!-- AR holati uchun DOM Overlay -->
+    <div id="ar-status-overlay" style="position: fixed; bottom: 10px; width: 100%; text-align: center; z-index: 1; visibility: hidden; background-color: rgba(0,0,0,0.6); color: white; padding: 8px; font-family: sans-serif; font-size: 14px;">
+        <span>AR rejimiga o'tishga tayyor. Atrofni skanerlang.</span>
+    </div>
+
+    <script>
+        const sceneElement = document.getElementById('myARScene');
+        const arStatusOverlay = document.getElementById('ar-status-overlay');
+
+        if (sceneElement) {
+            sceneElement.addEventListener('loaded', function () {
+                console.log('A-Frame sahnasi yuklandi!');
+            });
+
+            sceneElement.addEventListener('enter-vr', function () {
+                if (sceneElement.is('ar-mode')) {
+                    console.log("AR rejimiga kirildi!");
+                    arStatusOverlay.style.visibility = 'visible';
+                    arStatusOverlay.querySelector('span').textContent = "AR Rejimida. Ob'ektni joylashtirish uchun yuzani toping.";
+                }
+            });
+
+            sceneElement.addEventListener('exit-vr', function () {
+                console.log("AR rejimidan chiqildi!");
+                arStatusOverlay.style.visibility = 'hidden';
+            });
+
+            // GLB model yuklanishini tekshirish (ixtiyoriy)
+            const modelElement = document.getElementById('mainARModel');
+            if (modelElement) {
+                modelElement.addEventListener('model-loaded', function () {
+                    console.log('GLB model (untitled2.glb) yuklandi!');
+                    // Model yuklangandan keyin kerakli o'lchamlarni o'rnatishingiz mumkin
+                    // Masalan, uning chegaralarini o'lchab, masshtabini moslashtirish
+                });
+                modelElement.addEventListener('model-error', function (event) {
+                    console.error('GLB model (untitled2.glb) yuklashda xatolik:', event.detail.src);
+                    arStatusOverlay.style.visibility = 'visible';
+                    arStatusOverlay.querySelector('span').textContent = "Xatolik: Model yuklanmadi. Yo'lni tekshiring.";
+                });
+            }
+
+        } else {
+            console.error("A-Frame sahnasi topilmadi!");
+        }
+    </script>
+</body>
+</html>
