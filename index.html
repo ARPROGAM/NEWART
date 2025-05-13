@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mening AR Bino Turim</title>
+    <!-- <model-viewer> komponentini import qilish -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5; /* Orqa fon uchun yoqimli rang */
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 800px; /* Model viewer uchun maksimal kenglik */
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #1a73e8; /* Google uslubidagi ko'k rang */
+            margin-bottom: 15px;
+        }
+
+        p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        model-viewer {
+            width: 100%;
+            height: 500px; /* Modelning balandligi, o'zgartirishingiz mumkin */
+            background-color: #e8e8e8; /* Model orqa foni */
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        /* AR tugmasi uchun qo'shimcha stil (ixtiyoriy) */
+        model-viewer::part(ar-button) {
+            background-color: #1a73e8;
+            color: white;
+            border-radius: 20px;
+            padding: 10px 20px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.3s ease;
+        }
+        model-viewer::part(ar-button):hover {
+            background-color: #155ab6;
+        }
+
+        .footer {
+            font-size: 0.9em;
+            color: #777;
+            margin-top: 20px;
+        }
+
+        a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Binomni ARda Ko'ring!</h1>
+        <p>Quyidagi 3D modelni aylantirib ko'rishingiz va AR tugmasini bosib, uni o'z atrofingizda jonlantirishingiz mumkin.</p>
+
+        <model-viewer 
+            id="my-building-model"
+            src="YO'LINGIZ/NOMI.glb"  <!-- MUHIM: O'Z GLB FAYLINGIZGA YO'LNI KO'RSATING -->
+            alt="Mening bino modelim"
+            ar
+            ar-modes="webxr scene-viewer quick-look"
+            camera-controls
+            environment-image="neutral" <!-- Yoki o'zingizning HDRI rasmingizni qo'ying -->
+            shadow-intensity="1.2"
+            auto-rotate
+            autoplay
+            poster="poster.png" <!-- Model yuklanayotganda ko'rinadigan rasm (ixtiyoriy) -->
+            touch-action="pan-y"
+            style="width: 100%; height: 500px;">
+
+            <!-- AR tugmasi uchun slot (agar kerak bo'lsa, o'zgartirishingiz mumkin) -->
+            <button slot="ar-button" id="ar-button" style="display: none;"></button>
+            
+            <!-- Yuklanish indikatori -->
+            <div class="progress-bar" slot="progress-bar">
+                <div class="update-bar"></div>
+            </div>
+        </model-viewer>
+        <p>Agar AR tugmasi ko'rinmasa, qurilmangiz yoki brauzeringiz WebAR'ni qo'llab-quvvatlamasligi mumkin.</p>
+    </div>
+
+    <div class="footer">
+        <p>© 2024 Sizning Ismingiz. Barcha huquqlar himoyalangan. <br>
+           <a href="https://github.com/YOUR_GITHUB_USERNAME" target="_blank">GitHub Profilim</a>
+        </p>
+    </div>
+
+</body>
+</html>
