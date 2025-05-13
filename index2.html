@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Mening AR Dunyom (untitled2)</title>
+    <meta name="description" content="A-Frame yordamida AR sahnasi - untitled2.glb">
+    <!-- A-Frame kutubxonasini import qilish -->
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+</head>
+<body>
+    <a-scene
+        webxr="optionalFeatures: dom-overlay, hit-test;"
+        ar-mode-ui="enabled: true; overlayElement: #ar-overlay;" <!-- AR tugmasini va overlayni ko'rsatadi -->
+        renderer="colorManagement: true; physicallyCorrectLights: true;"
+        background="color: #ECECEC"
+        id="myScene">
+
+        <a-assets timeout="30000"> <!-- Resurslar yuklanishi uchun vaqtni oshirish (30 soniya) -->
+            <!-- Sizning GLB faylingiz -->
+            <a-asset-item id="myBuildingModel" src="untitled.glb"></a-asset-item>
+            
+            <!-- (Ixtiyoriy) Atrof-muhit uchun HDRI (agar kerak bo'lsa) -->
+            <!-- <img id="sky" src="your-sky-texture.hdr"> -->
+        </a-assets>
+
+        <!-- Foydalanuvchi kamerasi -->
+        <a-camera position="0 1.6 0" look-controls="magicWindowEnabled: false"></a-camera>
+
+        <!-- Sizning GLB modelingiz -->
+        <!-- position va scale ni modelingizga moslab o'zgartiring -->
+        <!-- Agar modelingiz katta bino bo'lsa, scale ni kichikroq qiling (masalan, 0.1 yoki 0.05) -->
+        <!-- Agar u kichik ob'ekt bo'lsa, scale 1 atrofida bo'lishi mumkin -->
+        <a-gltf-model
+            src="#myBuildingModel"
+            id="main-model"
+            position="0 0 -2.5"  <!-- Dastlab kameradan 2.5 metr oldinda, yer sathida -->
+            scale="0.5 0.5 0.5"    <!-- Boshlang'ich masshtab, o'zgartirishingiz mumkin -->
+            animation-mixer       <!-- Agar GLB ichida animatsiyalar bo'lsa -->
+            visible="true">
+        </a-gltf-model>
+
+        <!-- Atrof-muhit yorug'ligi -->
+        <a-light type="ambient" color="#FFFFFF" intensity="0.8"></a-light>
+        <!-- Yo'naltirilgan yorug'lik (quyosh kabi) -->
+        <a-light type="directional" color="#FFFFFF" intensity="0.6" position="-1 3 2"></a-light>
+
+        <!-- (Ixtiyoriy) Agar modelingiz yerga tekis turishi kerak bo'lsa va ARda yerni aniqlashni xohlasangiz -->
+        <!-- Bu qismni hozircha kommentga olib turamiz, chunki u qo'shimcha sozlash talab qilishi mumkin -->
+        <!-- 
+        <a-entity
+            ar-hit-test="target:#main-model; type:plane; enabled:true"
+            visible="false">
+        </a-entity>
+        <a-plane
+            id="groundPlane"
+            height="100" width="100"
+            rotation="-90 0 0"
+            material="shader:shadow; transparent:true; opacity:0.4"
+            shadow
+            visible="false">
+        </a-plane>
+        -->
+
+    </a-scene>
+
+    <!-- AR UI uchun DOM Overlay (Masalan, ko'rsatmalar yoki tugmalar uchun) -->
+    <div id="ar-overlay" style="position: fixed; bottom: 20px; width: 100%; text-align: center; z-index: 1; visibility: hidden;">
+        <p style="background-color: rgba(0,0,0,0.5); color: white; padding: 10px; border-radius: 5px; display: inline-block;">
+            AR rejimida atrofni skanerlang va kerakli joyga bosing (agar hit-test yoqilgan bo'lsa) yoki ob'ekt avtomatik paydo bo'ladi.
+        </p>
+    </div>
+
+    <script>
+        const sceneEl = document.querySelector('a-scene');
+        const arOverlay = document.getElementById('ar-overlay');
+        // const modelEl = document.getElementById('main-model'); // Agar model bilan ishlash kerak bo'lsa
+
+        sceneEl.addEventListener('enter-vr', function () {
+            if (sceneEl.is('ar-mode')) {
+                console.log("AR rejimiga kirildi!");
+                arOverlay.style.visibility = 'visible'; // ARga kirganda overlayni ko'rsatish
+                // Bu yerda AR rejimi uchun maxsus logikani qo'shishingiz mumkin
+            }
+        });
+
+        sceneEl.addEventListener('exit-vr', function () {
+            console.log("AR rejimidan chiqildi!");
+            arOverlay.style.visibility = 'hidden'; // ARdan chiqqanda overlayni yashirish
+        });
+
+        // Agar siz hit-test orqali ob'ektni yerga qo'ymoqchi bo'lsangiz,
+        // quyidagi kabi kod kerak bo'ladi:
+        /*
+        const mainModel = document.getElementById('main-model');
+        let hitTestEntity = document.querySelector('[ar-hit-test]');
+
+        if (hitTestEntity) {
+            mainModel.setAttribute('visible', 'false'); // Dastlab modelni yashirish
+
+            hitTestEntity.addEventListener('ar-hit-test-start', (data) => {
+                console.log('Scanning for surfaces...');
+                // Foydalanuvchiga skanerlash haqida xabar berish mumkin
+            });
+
+            hitTestEntity.addEventListener('ar-hit-test-achieved', (data) => {
+                console.log('Surface found');
+                // Yerni topgach, modelni shu yerga qo'yish mumkin (agar kerak bo'lsa)
+                // Bu yerda odatda foydalanuvchi ekranga bosishini kutish kerak
+            });
+
+            sceneEl.addEventListener('click', (event) => {
+                if (sceneEl.is('ar-mode') && hitTestEntity && hitTestEntity.components['ar-hit-test'].hasFoundAPose) {
+                    const hitPosition = hitTestEntity.getAttribute('position');
+                    const hitRotation = hitTestEntity.getAttribute('rotation'); // Yoki quaternion
+
+                    mainModel.setAttribute('position', hitPosition);
+                    // mainModel.setAttribute('rotation', hitRotation); // Agar kerak bo'lsa
+                    mainModel.setAttribute('visible', 'true');
+                    console.log('Model placed at:', hitPosition);
+                    
+                    // Bir marta joylashtirgandan keyin hit-testni o'chirish mumkin
+                    // hitTestEntity.removeAttribute('ar-hit-test');
+                    // hitTestEntity.setAttribute('visible', 'false');
+                }
+            });
+        }
+        */
+    </script>
+</body>
+</html>
