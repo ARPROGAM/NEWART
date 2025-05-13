@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>AR Bino Turi (Doimiy Nazorat)</title>
+    <title>ARios lc</title>
     <meta name="description" content="A-Frame AR - untitled2.glb">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="aframe-v1.5.0.min.js"></script> <!-- Lokal A-Frame -->
@@ -21,19 +21,20 @@
             z-index: 10;
             padding: 0 10px;
             box-sizing: border-box;
-            /* AR rejimida ham ko'rinib turishi uchun display:none olib tashlandi */
         }
         .ui-controls div { display: flex; gap: 8px; }
         .ui-controls button {
-            padding: 12px 15px; font-size: 16px; background-color: rgba(0,0,0,0.65);
+            padding: 12px 15px; font-size: 16px; background-color: rgba(0,0,0,0.7); /* Sal shaffofroq */
             color: white; border: none; border-radius: 8px; cursor: pointer;
             min-width: 50px; text-align: center;
+            -webkit-tap-highlight-color: transparent; /* Mobil uchun bosish effektini olib tashlash */
         }
-        .ui-controls button:active { background-color: rgba(0,0,0,0.85); }
+        .ui-controls button:active { background-color: rgba(0,0,0,0.9); }
 
         #ar-status-message-div {
             position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
-            z-index: 1; visibility: hidden; background-color: rgba(0,0,0,0.7);
+            z-index: 100; /* Boshqa elementlardan ustunroq */
+            visibility: hidden; background-color: rgba(0,0,0,0.75);
             color: white; padding: 8px 12px; border-radius: 5px; font-size: 14px;
         }
     </style>
@@ -43,18 +44,31 @@
         webxr="optionalFeatures: dom-overlay, hit-test;"
         ar-mode-ui="enabled: true; overlayElement: #ar-status-message-div;"
         renderer="colorManagement: true; physicallyCorrectLights: true;"
-        background="color: #E0E0E0"
-        id="myScene">
+        background="color: #DADADA" <!-- Fon rangini biroz o'zgartirdim -->
+        id="myScene"
+        vr-mode-ui="enabled: false"> <!-- Agar VR kerak bo'lmasa, VR tugmasini yashirish -->
 
         <a-assets timeout="60000">
             <a-asset-item id="buildingAsset" src="untitled2.glb"></a-asset-item>
         </a-assets>
 
         <!-- Kamera Rig (O'yinchi) -->
-        <a-entity id="playerRig" position="0 0.5 3"
-                  wasd-controls="fly: true; acceleration: 30; enabled: true;" <!-- enabled: true doimiy -->
-                  look-controls="pointerLockEnabled: true; magicWindowTrackingEnabled: false; touchEnabled: true; mouseEnabled: true; enabled: true;"> <!-- enabled: true doimiy -->
-            <a-entity id="camera" camera="active: true" position="0 1.6 0">
+        <a-entity id="playerRig" position="0 0.5 4" <!-- Boshlang'ich pozitsiya, modeldan orqaroqda -->
+                  
+                  <!-- PC uchun WASD nazorati. Mobil uchun bu komponentni dinamik ravishda o'chirish/yoqish mumkin. -->
+                  wasd-controls="fly: true; acceleration: 35; enabled: true;" 
+                  
+                  <!-- Sichqoncha va Sensorli ekran bilan aylanish. -->
+                  <!-- Hozircha look-controls ni playerRig ga qo'yamiz, bu butun rig ni aylantiradi. -->
+                  <!-- Agar faqat kamera aylanishini xohlasangiz, buni <a-camera> ichiga ko'chiring va JavaScriptni moslang. -->
+                  look-controls="pointerLockEnabled: true; 
+                                 magicWindowTrackingEnabled: false; 
+                                 touchEnabled: true;  <!-- Mobil uchun sensorli aylanish -->
+                                 mouseEnabled: true;  <!-- PC uchun sichqoncha bilan aylanish -->
+                                 enabled: true;">
+            <a-entity id="camera" 
+                      camera="active: true; fov: 70;" <!-- Ko'rish burchagini biroz o'zgartirish mumkin -->
+                      position="0 1.6 0">
             </a-entity>
         </a-entity>
 
@@ -62,28 +76,30 @@
         <a-gltf-model
             src="#buildingAsset"
             id="mainBuilding"
-            position="0 0 0"
+            position="0 0 0" <!-- Modelning markazi 0,0,0 da -->
             scale="0.5 0.5 0.5"
             animation-mixer
             visible="true">
         </a-gltf-model>
 
         <a-plane id="groundPlane" position="0 -0.01 0" rotation="-90 0 0" width="100" height="100"
-                 color="#B0B0B0" visible="true"></a-plane>
+                 color="#AAAAAA" visible="true"></a-plane> <!-- Yer rangini o'zgartirdim -->
 
-        <a-light type="ambient" color="#FFF" intensity="0.9"></a-light>
-        <a-light type="directional" color="#FFF" intensity="0.6" position="-1.5 3 2"></a-light>
+        <a-sky color="#C5CAE9"></a-sky> <!-- Oddiy osmon foni -->
+
+        <a-light type="ambient" color="#FFF" intensity="0.8"></a-light>
+        <a-light type="directional" color="#FFF" intensity="0.7" position="-2 3.5 2.5"></a-light>
 
     </a-scene>
 
     <div class="ui-controls">
         <div>
-            <button id="btnHeightUp">▲ Baland</button>
-            <button id="btnHeightDown">▼ Past</button>
+            <button id="btnHeightUp">▲ Balandlik</button>
+            <button id="btnHeightDown">▼ Balandlik</button>
         </div>
         <div>
-            <button id="btnScaleUp">➕ Kattalas</button>
-            <button id="btnScaleDown">➖ Kichrayt</button>
+            <button id="btnScaleUp">➕ Masshtab</button>
+            <button id="btnScaleDown">➖ Masshtab</button>
         </div>
     </div>
 
@@ -92,86 +108,113 @@
     </div>
 
     <script>
-        const scene = document.getElementById('myScene');
-        const playerRig = document.getElementById('playerRig');
-        const buildingModel = document.getElementById('mainBuilding');
+        const sceneEl = document.getElementById('myScene');
+        const playerRigEl = document.getElementById('playerRig');
+        const cameraEl = document.getElementById('camera'); // Kamera endi playerRig ichida
+        const buildingModelEl = document.getElementById('mainBuilding');
         
-        const btnHeightUp = document.getElementById('btnHeightUp');
-        const btnHeightDown = document.getElementById('btnHeightDown');
-        const btnScaleUp = document.getElementById('btnScaleUp');
-        const btnScaleDown = document.getElementById('btnScaleDown');
-        const arStatusDiv = document.getElementById('ar-status-message-div');
-        const arStatusMsg = document.getElementById('ar-status-message');
+        const btnHeightUpEl = document.getElementById('btnHeightUp');
+        const btnHeightDownEl = document.getElementById('btnHeightDown');
+        const btnScaleUpEl = document.getElementById('btnScaleUp');
+        const btnScaleDownEl = document.getElementById('btnScaleDown');
+        const arStatusDivEl = document.getElementById('ar-status-message-div');
+        const arStatusMsgEl = document.getElementById('ar-status-message');
 
-        const PLAYER_RIG_HEIGHT_STEP = 0.2;
+        const PLAYER_RIG_Y_STEP = 0.25; // Balandlik o'zgarish qadami
         const MODEL_SCALE_STEP = 0.05;
-        const MIN_SCALE = 0.01;
-        const MIN_PLAYER_RIG_Y = -10;
+        const MIN_MODEL_SCALE_VAL = 0.01;
+        const MIN_PLAYER_RIG_Y_POS = -15; // Yer ostini ko'rish uchun
+        const MAX_PLAYER_RIG_Y_POS = 20;  // Maksimal balandlik
 
-        scene.addEventListener('loaded', function () {
-            console.log('A-Frame sahnasi yuklandi.');
-            if (arStatusMsg) arStatusMsg.textContent = "Sahna yuklandi. ARga tayyor.";
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
 
-            buildingModel.addEventListener('model-loaded', function () {
+        // Nazoratni yoqish/o'chirish (PC va Mobil uchun moslashtirilgan)
+        function toggleControls(enable) {
+            if (playerRigEl.components['wasd-controls']) {
+                // WASD ni faqat PC da yoqamiz/o'chiramiz
+                playerRigEl.setAttribute('wasd-controls', 'enabled', !isMobileDevice() && enable);
+            }
+            if (playerRigEl.components['look-controls']) {
+                playerRigEl.setAttribute('look-controls', 'enabled', enable);
+                if (enable) {
+                    // Agar pointerLockEnabled bo'lsa, uni faqat PC da yoqamiz
+                    playerRigEl.setAttribute('look-controls', 'pointerLockEnabled', !isMobileDevice());
+                    playerRigEl.components['look-controls'].play();
+                } else {
+                    playerRigEl.components['look-controls'].pause();
+                }
+            }
+            console.log(`Virtual controls ${enable ? 'enabled' : 'disabled'}. Mobile: ${isMobileDevice()}`);
+        }
+
+        sceneEl.addEventListener('loaded', function () {
+            console.log('A-Frame sahna yuklandi.');
+            if (arStatusMsgEl) arStatusMsgEl.textContent = "Sahna yuklandi. ARga tayyor.";
+
+            buildingModelEl.addEventListener('model-loaded', function () {
                 console.log('GLB model yuklandi.');
-                if (arStatusMsg && !scene.is('ar-mode')) {
-                    arStatusMsg.textContent = "Model yuklandi. ARga tayyor.";
+                if (arStatusMsgEl && !sceneEl.is('ar-mode')) {
+                    arStatusMsgEl.textContent = "Model yuklandi. ARga tayyor.";
                 }
             });
-            buildingModel.addEventListener('model-error', function (e) {
+            buildingModelEl.addEventListener('model-error', function (e) {
                 console.error('GLB model yuklashda xatolik:', e.detail.src);
-                if (arStatusDiv) arStatusDiv.style.visibility = 'visible';
-                if (arStatusMsg) arStatusMsg.textContent = "XATOLIK: Model fayli yuklanmadi!";
+                if (arStatusDivEl) arStatusDivEl.style.visibility = 'visible';
+                if (arStatusMsgEl) arStatusMsgEl.textContent = "XATOLIK: Model fayli yuklanmadi!";
             });
 
-            // AR rejimi hodisalari (nazoratni o'chirmaymiz)
-            scene.addEventListener('enter-vr', function () {
-                if (scene.is('ar-mode')) {
+            // Dastlabki nazorat holati
+            toggleControls(!sceneEl.is('ar-mode'));
+
+            // AR rejimi hodisalari
+            sceneEl.addEventListener('enter-vr', function () {
+                if (sceneEl.is('ar-mode')) {
                     console.log("AR rejimiga kirildi!");
-                    if (arStatusDiv) arStatusDiv.style.visibility = 'visible';
-                    if (arStatusMsg) arStatusMsg.textContent = "AR Rejimida.";
-                    // Nazoratni o'chirish qismi olib tashlandi
-                    // playerRig.setAttribute('wasd-controls', 'enabled', false); // ENDI BU QATOR YO'Q
-                    // playerRig.setAttribute('look-controls', 'enabled', false); // ENDI BU QATOR YO'Q
-                    // playerRig.components['look-controls']?.pause();             // ENDI BU QATOR YO'Q
+                    if (arStatusDivEl) arStatusDivEl.style.visibility = 'visible';
+                    if (arStatusMsgEl) arStatusMsgEl.textContent = "AR Rejimida.";
+                    toggleControls(false); // ARda virtual nazoratni o'chiramiz
+                    // ARda UI tugmalarini yashirish (ixtiyoriy)
+                    // document.querySelector('.ui-controls').style.display = 'none'; 
                 }
             });
 
-            scene.addEventListener('exit-vr', function () {
+            sceneEl.addEventListener('exit-vr', function () {
                 console.log("AR rejimidan chiqildi!");
-                if (arStatusDiv) arStatusDiv.style.visibility = 'hidden';
-                // Nazoratni qayta yoqish qismi ham kerak emas, chunki u o'chirilmagan edi
-                // playerRig.setAttribute('wasd-controls', 'enabled', true);
-                // playerRig.setAttribute('look-controls', 'enabled', true);
-                // playerRig.components['look-controls']?.play();
+                if (arStatusDivEl) arStatusDivEl.style.visibility = 'hidden';
+                toggleControls(true); // 3D rejim uchun nazoratni qayta yoqamiz
+                // document.querySelector('.ui-controls').style.display = 'flex';
             });
 
-            // Balandlikni sozlash
-            btnHeightUp.addEventListener('click', () => {
-                const currentPos = playerRig.getAttribute('position');
-                playerRig.setAttribute('position', { x: currentPos.x, y: currentPos.y + PLAYER_RIG_HEIGHT_STEP, z: currentPos.z });
+            // Balandlikni sozlash (Player Rig ning Y pozitsiyasini o'zgartiradi)
+            btnHeightUpEl.addEventListener('click', () => {
+                const currentPos = playerRigEl.getAttribute('position');
+                let newY = currentPos.y + PLAYER_RIG_Y_STEP;
+                if (newY > MAX_PLAYER_RIG_Y_POS) newY = MAX_PLAYER_RIG_Y_POS;
+                playerRigEl.setAttribute('position', { x: currentPos.x, y: newY, z: currentPos.z });
             });
-            btnHeightDown.addEventListener('click', () => {
-                const currentPos = playerRig.getAttribute('position');
-                let newY = currentPos.y - PLAYER_RIG_HEIGHT_STEP;
-                if (newY < MIN_PLAYER_RIG_Y) newY = MIN_PLAYER_RIG_Y;
-                playerRig.setAttribute('position', { x: currentPos.x, y: newY, z: currentPos.z });
+            btnHeightDownEl.addEventListener('click', () => {
+                const currentPos = playerRigEl.getAttribute('position');
+                let newY = currentPos.y - PLAYER_RIG_Y_STEP;
+                if (newY < MIN_PLAYER_RIG_Y_POS) newY = MIN_PLAYER_RIG_Y_POS;
+                playerRigEl.setAttribute('position', { x: currentPos.x, y: newY, z: currentPos.z });
             });
 
             // Model masshtabini sozlash
-            btnScaleUp.addEventListener('click', () => {
-                const currentScale = buildingModel.getAttribute('scale');
-                buildingModel.setAttribute('scale', { 
+            btnScaleUpEl.addEventListener('click', () => {
+                const currentScale = buildingModelEl.getAttribute('scale');
+                buildingModelEl.setAttribute('scale', { 
                     x: currentScale.x + MODEL_SCALE_STEP, 
                     y: currentScale.y + MODEL_SCALE_STEP, 
                     z: currentScale.z + MODEL_SCALE_STEP 
                 });
             });
-            btnScaleDown.addEventListener('click', () => {
-                const currentScale = buildingModel.getAttribute('scale');
+            btnScaleDownEl.addEventListener('click', () => {
+                const currentScale = buildingModelEl.getAttribute('scale');
                 let newS = currentScale.x - MODEL_SCALE_STEP;
-                if (newS < MIN_SCALE) newS = MIN_SCALE;
-                buildingModel.setAttribute('scale', { x: newS, y: newS, z: newS });
+                if (newS < MIN_MODEL_SCALE_VAL) newS = MIN_MODEL_SCALE_VAL;
+                buildingModelEl.setAttribute('scale', { x: newS, y: newS, z: newS });
             });
         });
     </script>
